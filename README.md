@@ -6,6 +6,8 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 > 本 benchmark 由 Claude Code 協助完成, 就是為了驗證本地 LLM 層的可行性 — 速度和品質是否足以承擔任務。
 
+---
+
 ## 測試環境
 
 | 項目 | 規格 |
@@ -122,6 +124,8 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 | **9B-reasoning** | **19.3s / 629 tok** | **16.3s / 553 tok** | **推理場景最佳** |
 | 9B-thinking | timeout (600s) | 53s / 1,797 tok | ⚠️ 不穩定 |
 
+---
+
 ## 最終推薦：各場景勝出模型與參數
 
 三次測試綜合結論。所有模型為 **4-bit MLX 量化版本**。
@@ -212,6 +216,8 @@ reasoning (9B)   → 邏輯推理、數學推理
 # 需要 oMLX 在 localhost:8000 運行
 npx tsx scripts/omlx-benchmark.ts
 ```
+
+---
 
 ## 開放假設：4-bit 量化可能是官方參數失效的根因
 
