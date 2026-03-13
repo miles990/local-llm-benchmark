@@ -1,0 +1,49 @@
+{
+  "metadata": {
+    "run_id": 2,
+    "timestamp": "2026-03-13T10:35:00+08:00",
+    "conditions": "同 Run 1，驗證結果一致性"
+  },
+  "results": [
+    {
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "scenarios": [
+        { "name": "簡單問答", "category": "日常", "prefill_ms": 2400, "total_ms": 2400, "tok_per_sec": 0.4, "response_length": 1, "success": true },
+        { "name": "分類/路由", "category": "日常", "prefill_ms": 91, "total_ms": 107, "tok_per_sec": 18.7, "response_length": 9, "success": true },
+        { "name": "翻譯", "category": "日常", "prefill_ms": 80, "total_ms": 134, "tok_per_sec": 74.9, "response_length": 12, "success": true },
+        { "name": "摘要", "category": "中等", "prefill_ms": 125, "total_ms": 352, "tok_per_sec": 127.8, "response_length": 296, "success": true },
+        { "name": "程式碼生成", "category": "中等", "prefill_ms": 97, "total_ms": 897, "tok_per_sec": 182.9, "response_length": 498, "success": true },
+        { "name": "創意寫作", "category": "中等", "prefill_ms": 71, "total_ms": 219, "tok_per_sec": 132.4, "response_length": 108, "success": true },
+        { "name": "邏輯推理", "category": "推理", "prefill_ms": 114, "total_ms": 2500, "tok_per_sec": 194.6, "response_length": 1990, "success": true },
+        { "name": "數學推理", "category": "推理", "prefill_ms": 96, "total_ms": 1300, "tok_per_sec": 191.4, "response_length": 728, "success": true },
+        { "name": "長 prompt 理解", "category": "長文", "prefill_ms": 209, "total_ms": 1000, "tok_per_sec": 159.4, "response_length": 696, "success": true },
+        { "name": "Tool Calling", "category": "工具", "prefill_ms": 328, "total_ms": 328, "tok_per_sec": 3, "response_length": 0, "success": true, "has_tool_calls": true }
+      ],
+      "summary": {
+        "success_rate": "10/10",
+        "avg_tok_per_sec": 108.6,
+        "avg_prefill_ms": 360
+      }
+    },
+    {
+      "model": "Qwen3.5-9B-MLX-4bit",
+      "scenarios": [
+        { "name": "簡單問答", "category": "日常", "prefill_ms": 300, "total_ms": 344, "tok_per_sec": 2.9, "response_length": 1, "success": true },
+        { "name": "分類/路由", "category": "日常", "prefill_ms": 445, "total_ms": 488, "tok_per_sec": 2, "response_length": 6, "success": true },
+        { "name": "翻譯", "category": "日常", "prefill_ms": 293, "total_ms": 629, "tok_per_sec": 17.5, "response_length": 14, "success": true },
+        { "name": "摘要", "category": "中等", "prefill_ms": 748, "total_ms": 2400, "tok_per_sec": 22.9, "response_length": 371, "success": true },
+        { "name": "程式碼生成", "category": "中等", "prefill_ms": 440, "total_ms": 9400, "tok_per_sec": 31.7, "response_length": 847, "success": true },
+        { "name": "創意寫作", "category": "中等", "prefill_ms": 294, "total_ms": 967, "tok_per_sec": 22.7, "response_length": 89, "success": true },
+        { "name": "邏輯推理", "category": "推理", "prefill_ms": 604, "total_ms": 15900, "tok_per_sec": 32.1, "response_length": 1905, "success": true },
+        { "name": "數學推理", "category": "推理", "prefill_ms": 455, "total_ms": 8100, "tok_per_sec": 31.6, "response_length": 757, "success": true },
+        { "name": "長 prompt 理解", "category": "長文", "prefill_ms": 1600, "total_ms": 3200, "tok_per_sec": 17, "response_length": 215, "success": true },
+        { "name": "Tool Calling", "category": "工具", "prefill_ms": 2400, "total_ms": 2400, "tok_per_sec": 0.4, "response_length": 0, "success": true, "has_tool_calls": true }
+      ],
+      "summary": {
+        "success_rate": "10/10",
+        "avg_tok_per_sec": 18.1,
+        "avg_prefill_ms": 749
+      }
+    }
+  ]
+}

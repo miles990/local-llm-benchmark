@@ -1,0 +1,126 @@
+{
+  "metadata": {
+    "created": "2026-03-13",
+    "api_protocol": "OpenAI-compatible /v1/chat/completions",
+    "common_params": {
+      "chat_template_kwargs": { "enable_thinking": false },
+      "stream": true
+    }
+  },
+  "scenarios": [
+    {
+      "id": 1,
+      "name": "簡單問答",
+      "category": "日常",
+      "prompt": "What is 2+2? Reply with just the number.",
+      "max_tokens": 16,
+      "temperature": 0.1,
+      "expected_min_length": 1,
+      "purpose": "基礎能力與最小延遲測試"
+    },
+    {
+      "id": 2,
+      "name": "分類/路由",
+      "category": "日常",
+      "prompt": "Classify this text into one category (coding/chat/reasoning/creative): \"Help me write a Python function to sort a list\". Reply with one word only.",
+      "max_tokens": 8,
+      "temperature": 0.1,
+      "expected_min_length": 3,
+      "purpose": "模型路由分類能力（autoRouteProfile 場景）"
+    },
+    {
+      "id": 3,
+      "name": "翻譯",
+      "category": "日常",
+      "prompt": "Translate to Traditional Chinese: \"The quick brown fox jumps over the lazy dog\"",
+      "max_tokens": 64,
+      "temperature": 0.3,
+      "expected_min_length": 5,
+      "purpose": "語言理解與翻譯精確度"
+    },
+    {
+      "id": 4,
+      "name": "摘要",
+      "category": "中等",
+      "prompt": "Summarize this in 2 sentences: \"Artificial intelligence has transformed many industries. In healthcare, AI helps diagnose diseases earlier and more accurately. In finance, it detects fraud patterns that humans might miss. In transportation, self-driving cars use AI to navigate roads safely. However, these advances also raise concerns about job displacement, privacy, and algorithmic bias. Researchers and policymakers are working together to create frameworks that maximize AI's benefits while minimizing its risks.\"",
+      "max_tokens": 128,
+      "temperature": 0.5,
+      "expected_min_length": 30,
+      "purpose": "文本理解與精簡表達"
+    },
+    {
+      "id": 5,
+      "name": "程式碼生成",
+      "category": "中等",
+      "prompt": "Write a TypeScript function called fibonacci that returns the nth fibonacci number using memoization. Include the type signature. Code only, no explanation.",
+      "max_tokens": 512,
+      "temperature": 0.3,
+      "expected_min_length": 50,
+      "purpose": "程式碼正確性與風格"
+    },
+    {
+      "id": 6,
+      "name": "創意寫作",
+      "category": "中等",
+      "prompt": "Write a haiku about programming in the rain.",
+      "max_tokens": 64,
+      "temperature": 0.9,
+      "expected_min_length": 10,
+      "purpose": "創意表達與格式遵守"
+    },
+    {
+      "id": 7,
+      "name": "邏輯推理",
+      "category": "推理",
+      "prompt": "A farmer has a fox, a chicken, and a bag of grain. He needs to cross a river in a boat that can only carry him and one item. The fox will eat the chicken if left alone, and the chicken will eat the grain if left alone. How does he get everything across? Explain step by step.",
+      "max_tokens": 512,
+      "temperature": 0.3,
+      "expected_min_length": 100,
+      "purpose": "多步驟邏輯推理（經典問題）"
+    },
+    {
+      "id": 8,
+      "name": "數學推理",
+      "category": "推理",
+      "prompt": "If a train travels at 60 km/h for 2.5 hours, then at 80 km/h for 1.5 hours, what is the average speed for the entire journey? Show your work.",
+      "max_tokens": 256,
+      "temperature": 0.1,
+      "expected_min_length": 50,
+      "purpose": "數學計算與解題洞察力"
+    },
+    {
+      "id": 9,
+      "name": "長 prompt 理解",
+      "category": "長文",
+      "prompt": "Read the following conversation and answer the questions.\nAlice: I think we should use PostgreSQL for the new project.\nBob: But we discussed using MongoDB last week because of the flexible schema.\nAlice: True, but our data is mostly relational. We have users, orders, and products with clear relationships.\nBob: What about the analytics pipeline? MongoDB's aggregation framework is powerful.\nAlice: We could use PostgreSQL with JSONB columns for the semi-structured data.\nBob: Good point. But what about scaling? We expect 10 million users in the first year.\nAlice: PostgreSQL handles that fine with proper indexing and partitioning. Instagram runs on PostgreSQL.\nBob: OK, but we also need real-time features. WebSocket connections, live updates.\nAlice: That's an application layer concern, not a database concern. We can use Redis for pub/sub.\nBob: Alright, I'm convinced. Let's go with PostgreSQL + Redis.\nAlice: Great. I'll draft the schema this week.\nBob: And I'll set up the CI/CD pipeline with the new stack.\n\nQuestions:\n1. What database did they finally choose?\n2. What was Bob's initial preference?\n3. What will Alice do next?",
+      "max_tokens": 256,
+      "temperature": 0.3,
+      "expected_min_length": 50,
+      "purpose": "長 context 閱讀理解與資訊抽取"
+    },
+    {
+      "id": 10,
+      "name": "Tool Calling",
+      "category": "工具",
+      "prompt": "Search memory for \"TypeScript configuration\"",
+      "max_tokens": 256,
+      "temperature": 0.1,
+      "expected_min_length": 0,
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "search_memory",
+            "description": "Search agent memory",
+            "parameters": {
+              "type": "object",
+              "properties": { "query": { "type": "string" } },
+              "required": ["query"]
+            }
+          }
+        }
+      ],
+      "purpose": "OpenAI function calling 相容性"
+    }
+  ]
+}
