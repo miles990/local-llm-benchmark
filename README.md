@@ -66,12 +66,44 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 | **9B-reasoning** | **19.3s / 629 tok** | **16.3s / 553 tok** | **推理場景最佳** |
 | 9B-thinking | timeout (600s) | 53s / 1,797 tok | ⚠️ 不穩定 |
 
-### 結論
+## 最終推薦：各場景勝出模型與參數
 
-- **0.8B 適合**：路由分類、簡單問答、速度優先的場景
-- **9B 適合**：程式碼、推理、翻譯、創意等需要品質的場景
-- **9B-reasoning**：推理場景比 general 快 47%，比 thinking 穩定
-- **最佳策略**：fast profile 用 0.8B 做路由（~100ms），其他 profile 用 9B 拿品質
+三次測試綜合結論。所有模型為 **4-bit MLX 量化版本**。
+
+### 場景 → Profile 對應
+
+| 場景 | 推薦 Profile | 模型 | temp | top_p | top_k | pp | thinking | max_tokens | 理由 |
+|------|-------------|------|------|-------|-------|----|----------|-----------|------|
+| 簡單問答 | **fast** | 0.8B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 81ms，品質與 9B 相同 |
+| 分類/路由 | **fast** | 0.8B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 109ms，保守參數下分類穩定 |
+| 摘要 | **fast** | 0.8B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 469ms，品質與 9B 相同，速度快 6x |
+| 閱讀理解 | **fast** | 0.8B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 1.2s，引據比 9B 更完整 |
+| 翻譯 | **default** | 9B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 0.8B 翻譯不精確 |
+| 程式碼生成 | **default** | 9B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 0.8B 有 bug / 幻覺 import |
+| 創意寫作 | **creative** | 9B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 0.8B 不遵守格式 |
+| Tool Calling | **default** | 9B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 僅 9B 支援 |
+| 邏輯推理 | **reasoning** ⭐ | 9B | 1.0 | 1.0 | 40 | 2.0 | false | 81,920 | 19.3s，比 general 快 47% |
+| 數學推理 | **reasoning** ⭐ | 9B | 1.0 | 1.0 | 40 | 2.0 | false | 81,920 | 16.3s，最快且正確 |
+
+### 三個核心 Profile
+
+```
+fast (0.8B)      → 路由、分類、簡單問答、摘要、閱讀理解
+default (9B)     → 翻譯、程式碼、創意寫作、Tool Calling
+reasoning (9B)   → 邏輯推理、數學推理
+```
+
+### Thinking Mode 結論：不推薦常規使用
+
+| 問題 | 說明 |
+|------|------|
+| **`<think>` 標籤不穩定** | 9B thinking mode 約 50% 機率不生成 `<think>` 標籤 |
+| **Thinking loop** | 不生成 `<think>` 時，思考以純文字洩漏到 content，消耗所有 max_tokens 或觸發 timeout |
+| **實測表現** | 邏輯推理 → timeout (600s)；數學推理 → 53s（正常時可用，但不穩定） |
+| **根因假設** | 4-bit 量化壓平 softmax 機率分佈，低頻特殊 token（`<think>`）生成閾值偏移 |
+| **替代方案** | 推理場景用 **reasoning** profile（non-thinking + 官方推理參數），速度更快且 100% 穩定 |
+
+> **thinking** 和 **thinking-code** profile 保留但不推薦。需要推理能力時，**reasoning** profile 是更好的選擇 — 比 thinking 快 47%，且不依賴 `<think>` 標籤解析。
 
 ## 檔案結構
 
