@@ -4,9 +4,7 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 使用 [oMLX](https://github.com/jundot/omlx) 推理伺服器，透過 OpenAI-compatible API 測試不同大小的量化模型在各種使用場景下的表現。
 
-```
-本 benchmark 由 Claude Code 協助完成, 就是為了驗證本地 LLM 層的可行性 — 速度和品質是否足以承擔任務。
-```
+> 本 benchmark 由 Claude Code 協助完成, 就是為了驗證本地 LLM 層的可行性 — 速度和品質是否足以承擔任務。
 
 ## 測試環境
 
