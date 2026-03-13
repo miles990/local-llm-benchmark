@@ -6,7 +6,7 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 ### 為什麼選 oMLX
 
-oMLX 的 **Tiered KV Cache（RAM + SSD）** 是選擇它的主因 — 熱資料留 RAM，冷資料 offload 到 SSD（safetensors 格式），相同 prefix 的 context 從磁碟還原而非重新計算 prefill。對 Agent 場景來說，每個 OODA cycle 都注入大量重複 context（perception + memory + skills），KV Cache 持久化讓這些重複 prefill 不再是浪費，**讓在 Mac 上跑本地 AI 變得有意義**。
+oMLX 的 **Tiered KV Cache（RAM + SSD）** 是選擇它的主因 — 熱資料留 RAM，冷資料 offload 到 SSD（safetensors 格式），相同 prefix 的 context 從磁碟還原而非重新計算 prefill。Agent 每次推理都會注入大量重複 context，KV Cache 持久化讓這些重複 prefill 不再是浪費，**讓在 Mac 上跑本地 AI 變得有意義**。
 
 > 本 benchmark 由 Claude Code 協助完成, 就是為了驗證本地 LLM 層的可行性 — 速度和品質是否足以承擔任務。
 
