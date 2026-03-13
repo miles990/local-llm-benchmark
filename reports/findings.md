@@ -84,6 +84,36 @@ HuggingFace 文件也警告 0.8B「more prone to entering thinking loops」。
 
 **建議**：推理場景用 **9B-reasoning**（non-thinking + reasoning 參數），避免 thinking mode。Thinking mode 僅在確認 `<think>` 標籤可靠的場景使用。
 
+## 假設：4-bit 量化可能是官方參數失效的根因
+
+發現 6-8 的問題（0.8B thinking loop、`<think>` 標籤不穩定）可能不是官方參數本身的問題，而是 **4-bit MLX 量化** 改變了模型行為特性，導致官方在全精度模型上調校的參數不適用。
+
+### 量化對機率分佈的影響
+
+| 效應 | 說明 | 與測試結果的關聯 |
+|------|------|---------------|
+| **機率分佈更模糊** | 權重精度下降 → softmax 輸出的峰值被壓平 | temp=1.0 在全精度上可能還有清晰的 top tokens，量化後機率分佈散開 |
+| **小模型影響更大** | 0.8B 參數少，每個權重的精度損失佔比更高 | 解釋為何 0.8B temp=1.0 崩潰，9B temp=1.0 還能用 |
+| **特殊 token 生成不穩定** | `<think>` 等低頻 token 在量化後機率偏移更大 | 解釋 `<think>` 標籤 ~50% 生成率 |
+| **presence_penalty 放大效應** | 量化後重複傾向可能已經不同，pp=2.0 可能過度懲罰 | 模型被推離正常 token → thinking loop |
+
+### 支持證據
+
+1. **0.8B 4-bit + temp=1.0 = thinking loop**，但 **9B 4-bit + temp=1.0 = 正常** → 量化對小模型衝擊更大
+2. **9B thinking mode `<think>` 生成率 ~50%** → 量化可能影響特殊 token 的生成閾值
+3. 官方文件說 0.8B「more prone to entering thinking loops」— 但這可能是全精度下的觀察，量化後更嚴重
+4. 官方推薦參數的測試環境幾乎確定是 **FP16/BF16 全精度**，不是 4-bit 量化版本
+
+### 驗證方法
+
+| 測試 | 驗證目標 | 可行性 |
+|------|---------|--------|
+| 0.8B FP16 + 官方 temp=1.0, pp=2.0 | 全精度下是否仍有 thinking loop | ✅ 可行（1.6GB，16GB RAM 足夠） |
+| 9B FP16 + thinking mode | `<think>` 標籤生成率是否提高 | ❌ 不可行（~18GB，超出 16GB RAM） |
+| 0.8B 8-bit + 官方參數 | 中間量化精度是否表現更好 | ✅ 可行（~1.2GB） |
+
+若 FP16 版本在官方參數下表現正常，即可確認「量化是保守參數的根因」這一假設。
+
 ---
 
 ## 三次測試速度一致性

@@ -127,14 +127,16 @@ Thinking mode 的 `<think>` 標籤生成**不穩定**，邏輯推理場景會觸
 
 ## 關鍵發現
 
-### 發現 6：官方推薦參數不適合 0.8B 小模型
+### 發現 6：官方推薦參數不適合 0.8B 小模型（4-bit 量化下）
 
-0.8B 官方推薦的 `temp=1.0, top_p=1.0, pp=2.0` 會導致：
+0.8B 官方推薦的 `temp=1.0, top_p=1.0, pp=2.0` 在 **4-bit MLX 量化版本**上會導致：
 - **Thinking loop**：模型輸出 "Thinking Process:" 純文字思考，不停止（創意寫作 164s、邏輯推理 231s）
 - **分類錯誤**：temp=1.0 讓 0.8B 的分類不穩定（"coding" → "reasoning"）
 - **翻譯品質下降**：更多隨機性導致更差的譯文
 
-**建議**：0.8B 使用保守參數（temp=0.7, top_p=0.8, pp=1.5）而非官方推薦。
+**假設**：官方參數是在 FP16/BF16 全精度模型上調校的。4-bit 量化壓平了 softmax 機率分佈的峰值，高溫度在此基礎上進一步放大隨機性，導致小模型失控。小模型（0.8B）受影響更大，因為每個權重的精度損失佔比更高。
+
+**建議**：4-bit 量化的 0.8B 使用保守參數（temp=0.7, top_p=0.8, pp=1.5）。待 FP16 版本驗證後可重新評估。
 
 ### 發現 7：9B-reasoning profile 是推理場景最佳選擇
 
@@ -149,6 +151,8 @@ Thinking mode 的 `<think>` 標籤生成**不穩定**，邏輯推理場景會觸
 1. `<think>` 標籤生成不穩定（50% 機率不生成）
 2. 不生成 `<think>` 時會進入 thinking loop（消耗 600s timeout 或全部 max_tokens）
 
+**假設**：`<think>` 是低頻特殊 token，4-bit 量化後其生成機率偏移更大，導致模型不穩定地觸發思考模式。
+
 **建議**：推理場景用 **9B-reasoning**（non-thinking + reasoning 參數），避免 thinking mode。
 
 ---
@@ -157,9 +161,9 @@ Thinking mode 的 `<think>` 標籤生成**不穩定**，邏輯推理場景會觸
 
 | Profile | 模型 | 場景 | 參數 | 理由 |
 |---------|------|------|------|------|
-| **fast** | 0.8B | 路由分類、簡單問答 | temp=0.7, top_p=0.8, pp=1.5 | 官方參數讓 0.8B 不穩定，保守設定更安全 |
+| **fast** | 0.8B | 路由分類、簡單問答 | temp=0.7, top_p=0.8, pp=1.5 | 官方參數在 4-bit 量化下不穩定，保守設定更安全 |
 | **default** | 9B | 一般任務 | temp=0.7, top_p=0.8, pp=1.5 | 官方 non-thinking general ✅ |
 | **reasoning** ⭐ | 9B | 深度推理、數學 | temp=1.0, top_p=1.0, top_k=40, pp=2.0 | 官方 non-thinking reasoning，比 thinking mode 更快更穩 |
-| **thinking** | 9B | 僅在需要時 | temp=1.0, top_p=0.95, pp=1.5 | `<think>` 不穩定，有 thinking loop 風險 |
+| **thinking** | 9B | 僅在需要時 | temp=1.0, top_p=0.95, pp=1.5 | `<think>` 在 4-bit 量化下不穩定，有 thinking loop 風險 |
 | **thinking-code** | 9B | 精確 coding | temp=0.6, top_p=0.95, pp=0.0 | 官方 thinking coding |
 | **creative** | 9B | 創意寫作 | temp=0.7, top_p=0.8, pp=1.5 | 對齊 non-thinking general |

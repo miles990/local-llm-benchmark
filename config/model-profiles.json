@@ -6,7 +6,7 @@
     ],
     "created": "2026-03-13",
     "updated": "2026-03-13",
-    "notes": "基於 HuggingFace 官方模型卡推薦參數。0.8B 使用保守參數（官方高溫參數導致 thinking loop，見發現 6）。Run 3 驗證後調整。"
+    "notes": "基於 HuggingFace 官方模型卡推薦參數。0.8B 使用保守參數（官方高溫參數在 4-bit 量化下導致 thinking loop，見發現 6）。假設根因是量化降低機率分佈精度，待 FP16 驗證。"
   },
   "profiles": {
     "fast": {
@@ -23,7 +23,7 @@
       "extra_body": {
         "chat_template_kwargs": { "enable_thinking": false }
       },
-      "official_match": "⚠️ 刻意偏離官方值（官方 temp=1.0/pp=2.0 導致 thinking loop，見發現 6）",
+      "official_match": "⚠️ 刻意偏離官方值（官方 temp=1.0/pp=2.0 在 4-bit 量化下導致 thinking loop，見發現 6）",
       "official_params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0 }
     },
     "default": {
@@ -74,7 +74,7 @@
         "chat_template_kwargs": { "enable_thinking": true }
       },
       "official_match": "✅ 完全符合 Thinking General Tasks 建議",
-      "reliability_warning": "<think> 標籤生成率 ~50%，失敗時進入 thinking loop"
+      "reliability_warning": "<think> 標籤生成率 ~50%（可能與 4-bit 量化有關），失敗時進入 thinking loop"
     },
     "thinking-code": {
       "description": "Thinking 精確 Coding",
