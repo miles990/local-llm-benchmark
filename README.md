@@ -200,7 +200,7 @@ reasoning (9B)   → 邏輯推理、數學推理
 
 ### Profile 完整參數
 
-每個 profile 為獨立 JSON 配置檔，可直接載入使用。
+每個 profile 為獨立 JSON 配置檔，可直接載入使用。完整參數對比見 [`profiles/profiles.md`](profiles/profiles.md)。
 
 | Profile | 配置檔 | 說明 |
 |---------|--------|------|
@@ -228,6 +228,7 @@ reasoning (9B)   → 邏輯推理、數學推理
 ```
 ├── README.md                              # 本檔案
 ├── profiles/                              # Profile 配置檔
+│   ├── profiles.md                        # 場景對應與參數總表
 │   ├── fast.json                          # 0.8B 快速回覆
 │   ├── default.json                       # 9B 一般任務
 │   ├── reasoning.json                     # 9B 深度推理
