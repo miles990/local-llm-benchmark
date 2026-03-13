@@ -72,18 +72,18 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 ### 場景 → Profile 對應
 
-| 場景 | 推薦 Profile | 模型 | temp | top_p | top_k | pp | thinking | max_tokens | 理由 |
-|------|-------------|------|------|-------|-------|----|----------|-----------|------|
-| 簡單問答 | **fast** | 0.8B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 81ms，品質與 9B 相同 |
-| 分類/路由 | **fast** | 0.8B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 109ms，保守參數下分類穩定 |
-| 摘要 | **fast** | 0.8B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 469ms，品質與 9B 相同，速度快 6x |
-| 閱讀理解 | **fast** | 0.8B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 1.2s，引據比 9B 更完整 |
-| 翻譯 | **default** | 9B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 0.8B 翻譯不精確 |
-| 程式碼生成 | **default** | 9B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 0.8B 有 bug / 幻覺 import |
-| 創意寫作 | **creative** | 9B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 0.8B 不遵守格式 |
-| Tool Calling | **default** | 9B | 0.7 | 0.8 | 20 | 1.5 | false | 32,768 | 僅 9B 支援 |
-| 邏輯推理 | **reasoning** ⭐ | 9B | 1.0 | 1.0 | 40 | 2.0 | false | 81,920 | 19.3s，比 general 快 47% |
-| 數學推理 | **reasoning** ⭐ | 9B | 1.0 | 1.0 | 40 | 2.0 | false | 81,920 | 16.3s，最快且正確 |
+| 場景 | 推薦 Profile | 模型 | 理由 |
+|------|-------------|------|------|
+| 簡單問答 | [**fast**](#fast) | 0.8B | 81ms，品質與 9B 相同 |
+| 分類/路由 | [**fast**](#fast) | 0.8B | 109ms，保守參數下分類穩定 |
+| 摘要 | [**fast**](#fast) | 0.8B | 469ms，品質與 9B 相同，速度快 6x |
+| 閱讀理解 | [**fast**](#fast) | 0.8B | 1.2s，引據比 9B 更完整 |
+| 翻譯 | [**default**](#default) | 9B | 0.8B 翻譯不精確 |
+| 程式碼生成 | [**default**](#default) | 9B | 0.8B 有 bug / 幻覺 import |
+| 創意寫作 | [**creative**](#creative) | 9B | 0.8B 不遵守格式 |
+| Tool Calling | [**default**](#default) | 9B | 僅 9B 支援 |
+| 邏輯推理 | [**reasoning**](#reasoning) ⭐ | 9B | 19.3s，比 general 快 47% |
+| 數學推理 | [**reasoning**](#reasoning) ⭐ | 9B | 16.3s，最快且正確 |
 
 ### 三個核心 Profile
 
@@ -92,6 +92,98 @@ fast (0.8B)      → 路由、分類、簡單問答、摘要、閱讀理解
 default (9B)     → 翻譯、程式碼、創意寫作、Tool Calling
 reasoning (9B)   → 邏輯推理、數學推理
 ```
+
+### Profile 完整參數
+
+#### fast
+
+| 參數 | 值 |
+|------|-----|
+| 模型 | Qwen3.5-0.8B-MLX-4bit |
+| temperature | 0.7 |
+| top_p | 0.8 |
+| top_k | 20 |
+| presence_penalty | 1.5 |
+| enable_thinking | false |
+| max_tokens | 32,768 |
+| timeout | 30s |
+
+> ⚠️ 官方推薦 temp=1.0, pp=2.0，但在 4-bit 量化下導致 thinking loop（[見發現 6](reports/findings.md#發現-6官方推薦參數不適合-08b-小模型run-3)）
+
+#### default
+
+| 參數 | 值 |
+|------|-----|
+| 模型 | Qwen3.5-9B-MLX-4bit |
+| temperature | 0.7 |
+| top_p | 0.8 |
+| top_k | 20 |
+| presence_penalty | 1.5 |
+| enable_thinking | false |
+| max_tokens | 32,768 |
+| timeout | 600s |
+
+> ✅ 完全符合 Qwen 官方 Non-Thinking General Tasks 建議
+
+#### reasoning
+
+| 參數 | 值 |
+|------|-----|
+| 模型 | Qwen3.5-9B-MLX-4bit |
+| temperature | 1.0 |
+| top_p | 1.0 |
+| top_k | 40 |
+| presence_penalty | 2.0 |
+| enable_thinking | false |
+| max_tokens | 81,920 |
+| timeout | 600s |
+
+> ✅ 完全符合 Qwen 官方 Non-Thinking Hard Reasoning 建議。邏輯推理比 general 快 47%，答案更簡潔
+
+#### creative
+
+| 參數 | 值 |
+|------|-----|
+| 模型 | Qwen3.5-9B-MLX-4bit |
+| temperature | 0.7 |
+| top_p | 0.8 |
+| top_k | 20 |
+| presence_penalty | 1.5 |
+| enable_thinking | false |
+| max_tokens | 32,768 |
+| timeout | 600s |
+
+> 對齊 Non-Thinking General Tasks 參數，Run 3 驗證穩定
+
+#### thinking（不推薦常規使用）
+
+| 參數 | 值 |
+|------|-----|
+| 模型 | Qwen3.5-9B-MLX-4bit |
+| temperature | 1.0 |
+| top_p | 0.95 |
+| top_k | 20 |
+| presence_penalty | 1.5 |
+| enable_thinking | true |
+| max_tokens | 81,920 |
+| timeout | 600s |
+
+> ⚠️ `<think>` 標籤生成率 ~50%，失敗時進入 thinking loop。推薦改用 [reasoning](#reasoning)
+
+#### thinking-code（不推薦常規使用）
+
+| 參數 | 值 |
+|------|-----|
+| 模型 | Qwen3.5-9B-MLX-4bit |
+| temperature | 0.6 |
+| top_p | 0.95 |
+| top_k | 20 |
+| presence_penalty | 0.0 |
+| enable_thinking | true |
+| max_tokens | 81,920 |
+| timeout | 600s |
+
+> ✅ 符合 Qwen 官方 Thinking Precise Coding 建議，但 `<think>` 標籤穩定性待驗證
 
 ### Thinking Mode 結論：不推薦常規使用
 
