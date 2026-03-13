@@ -4,6 +4,39 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 使用 [oMLX](https://github.com/jundot/omlx) 推理伺服器，透過 OpenAI-compatible API 測試不同大小的量化模型在各種使用場景下的表現。
 
+## 背景：為什麼需要本地 LLM
+
+### 問題
+
+[mini-agent](https://github.com/anthropics/mini-agent) 是一個 24/7 常駐的個人 AI agent，核心推理使用 Claude Code（Anthropic API）。隨著 agent 的感知系統、多 lane 並行、背景觸手（delegation）等功能逐步上線，**API token 用量急速成長**：
+
+- 已使用 **2.5 個 Max Plan** 的額度，且用量持續增加
+- 每個 OODA cycle 的 context 注入（perception + memory + skills）消耗大量 input tokens
+- 6 條並行背景觸手 + foreground lane + main loop = 最多 9 條同時推理
+- 不是所有任務都需要 Claude 等級的智力 — 路由分類、簡單問答用 Claude 是浪費
+
+### 契機
+
+兩個先前的實驗證明了「分層推理」的可行性：
+
+1. **mushi — System 1 直覺層**：用輕量模型（Taalas HC1，~800ms）做快速 triage（wake/skip 判斷），讓不必要的 cycle 不發生。上線後**每天省 ~1M tokens**，980+ 次 triage 零 false negative 後畢業。證明「不是所有判斷都需要大模型」
+2. **autoRouteProfile 架構**：已在 mini-agent 中實作兩階段路由 — 先用小模型分類，再路由到對應 profile。架構就緒，缺的是本地推理能力
+
+然後看到了 [oMLX](https://github.com/jundot/omlx) — Apple Silicon 原生的 MLX 推理伺服器，支援 OpenAI-compatible API、多模型 pinning、streaming。剛好補上最後一塊拼圖。
+
+### 目標
+
+用本地 LLM 承擔不需要 Claude 智力的任務，**降低 API 成本的同時增加並發能力**：
+
+```
+之前：所有任務 → Claude API（貴、有 rate limit、單點依賴）
+之後：路由分類、簡單判斷 → 本地 0.8B（免費、無限、~100ms）
+      一般任務          → 本地 9B（免費、無限、~18 tok/s）
+      需要高智力的任務   → Claude API（只用在真正需要的地方）
+```
+
+本 benchmark 就是為了驗證這個架構的可行性 — 本地模型的速度和品質是否足以承擔分流任務。
+
 ## 測試環境
 
 | 項目 | 規格 |
