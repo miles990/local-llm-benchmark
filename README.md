@@ -8,7 +8,9 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 ### 問題
 
-[mini-agent](https://github.com/anthropics/mini-agent) 是一個 24/7 常駐的個人 AI agent，核心推理使用 Claude Code（Anthropic API）。隨著 agent 的感知系統、多 lane 並行、背景觸手（delegation）等功能逐步上線，**API token 用量急速成長**：
+[mini-agent](https://github.com/miles990/mini-agent) 是一個 24/7 常駐的個人 AI agent，未來將抽取為通用框架 [Asurada](https://github.com/miles990/mini-agent/blob/main/memory/proposals/2026-03-11-asurada-framework.md)（阿斯拉達）— 一個 perception-driven 的個人 AI 夥伴框架，讓任何人都能跑自己的 agent。
+
+核心推理使用 Claude Code（Anthropic API）。隨著 agent 的感知系統、多 lane 並行、背景觸手（delegation）等功能逐步上線，**API token 用量急速成長**：
 
 - 已使用 **2.5 個 Max Plan** 的額度，且用量持續增加
 - 每個 OODA cycle 的 context 注入（perception + memory + skills）消耗大量 input tokens
@@ -26,16 +28,22 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 ### 目標
 
-用本地 LLM 承擔不需要 Claude 智力的任務，**降低 API 成本的同時增加並發能力**：
+用本地 LLM 承擔不需要 Claude 智力的任務，**降低 API 成本的同時增加並發能力**。這也是 Asurada 通用架構的核心設計 — agent 不應該綁死在單一 LLM provider 上：
 
 ```
+Asurada 三層推理架構：
+
+  System 0: mushi（直覺層）    → 本地輕量模型，~800ms triage，判斷要不要醒來
+  System 1: 本地 LLM（快思考）  → 0.8B 路由 + 9B 執行，免費、無限、低延遲
+  System 2: Claude API（慢思考）→ 只用在真正需要高智力的地方
+
 之前：所有任務 → Claude API（貴、有 rate limit、單點依賴）
 之後：路由分類、簡單判斷 → 本地 0.8B（免費、無限、~100ms）
       一般任務          → 本地 9B（免費、無限、~18 tok/s）
       需要高智力的任務   → Claude API（只用在真正需要的地方）
 ```
 
-本 benchmark 就是為了驗證這個架構的可行性 — 本地模型的速度和品質是否足以承擔分流任務。
+本 benchmark 就是為了驗證 System 1 層的可行性 — 本地模型的速度和品質是否足以承擔分流任務。
 
 ## 測試環境
 
