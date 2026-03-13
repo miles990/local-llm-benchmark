@@ -107,6 +107,50 @@
 
 波動在 ±15% 以內，結果高度一致。Run 2 略快，可能是 oMLX SSD KV cache 命中。
 
+### Run 3（官方推薦參數）
+
+Run 3 使用 Qwen HuggingFace 官方推薦參數，新增 9B-reasoning 和 9B-thinking profile。
+詳細報告見 `reports/2026-03-13-run3-official-params.md`。
+
+| 場景 | Profile | Prefill | Total | Tokens | tok/s | Finish |
+|------|---------|---------|-------|--------|-------|--------|
+| 簡單問答 | 0.8B | 72ms | 81ms | 1 | 12.4 | stop |
+| 簡單問答 | 9B | 303ms | 345ms | 1 | 2.9 | stop |
+| 分類/路由 | 0.8B | 93ms | 109ms | 2 | 18.4 | stop |
+| 分類/路由 | 9B | 435ms | 478ms | 1 | 2.1 | stop |
+| 翻譯 | 0.8B | 81ms | 150ms | 13 | 86.8 | stop |
+| 翻譯 | 9B | 300ms | 670ms | 12 | 17.9 | stop |
+| 摘要 | 0.8B | 147ms | 469ms | 66 | 140.9 | stop |
+| 摘要 | 9B | 754ms | 2.5s | 60 | 23.5 | stop |
+| 程式碼生成 | 0.8B | 88ms | 1.8s | 369 | 205.5 | stop |
+| 程式碼生成 | 9B | 443ms | 3.3s | 99 | 30.0 | stop |
+| 創意寫作 | 0.8B | 73ms | **163.7s** ⚠️ | 24,854 | 151.8 | stop |
+| 創意寫作 | 9B | 776ms | 1.4s | 20 | 14.5 | stop |
+| 邏輯推理 | 0.8B | 117ms | **230.5s** ⚠️ | 32,767 | 142.2 | **length** |
+| 邏輯推理 | 9B | 5.6s | 36.5s | 1,000 | 27.4 | stop |
+| 邏輯推理 | 9B-reasoning | 774ms | **19.3s** | 629 | 32.5 | stop |
+| 邏輯推理 | 9B-thinking | — | **600s** ⚠️ | 0 | — | **timeout** |
+| 數學推理 | 0.8B | 6.1s | 11.5s | 1,074 | 93.8 | stop |
+| 數學推理 | 9B | 462ms | 16.9s | 558 | 33.1 | stop |
+| 數學推理 | 9B-reasoning | 456ms | **16.3s** | 553 | 33.9 | stop |
+| 數學推理 | 9B-thinking | 459ms | 53.0s | 1,797 | 33.9 | stop 💭 |
+| 閱讀理解 | 0.8B | 310ms | 1.2s | 194 | 160.0 | stop |
+| 閱讀理解 | 9B | 1.3s | 3.0s | 60 | 20.0 | stop |
+| Tool Calling | 9B | 2.3s | 2.3s | 1 | 0.4 | tool_calls |
+
+**Run 3 關鍵發現**：
+- 0.8B 使用官方高溫參數（temp=1.0, pp=2.0）導致 **thinking loop**（創意寫作 164s、邏輯推理 231s）
+- **9B-reasoning** 在推理場景比 general 快 47%，比 thinking 穩定
+- 9B-thinking 的 `<think>` 標籤生成不穩定，邏輯推理場景 timeout
+
+### 三次測試一致性
+
+| 指標 | Run 1 | Run 2 | Run 3 | 說明 |
+|------|-------|-------|-------|------|
+| 9B avg tok/s | 17.3 | 18.1 | 17.2 | ±5%，高度穩定 |
+| 9B avg prefill | 762ms | 749ms | 1.3s* | *含長 prompt 5.6s |
+| 0.8B avg tok/s | 100.2 | 108.6 | 112.4* | *被 thinking loop 拉高 |
+
 ### 異常值：簡單問答 0.8B 2.4s
 
 兩次測試中，0.8B 的第一個場景（簡單問答）都穩定在 2.4s，遠高於後續場景（~100ms）。推測為測試腳本首次請求觸發了某種初始化開銷（可能是 oMLX 的 batch scheduler 預熱）。
@@ -147,15 +191,16 @@
 - **需要精確度的任務（程式碼、推理、翻譯、創意）**：必須用 9B
 - 0.8B 的推理能力不可靠（會產生重複和邏輯錯誤）
 
-### 最佳 Profile 配置
+### 最佳 Profile 配置（Run 3 更新）
 
-| Profile | 模型 | 場景 | 理由 |
-|---------|------|------|------|
-| fast | 0.8B | 路由分類、簡單問答 | ~100ms 回應，品質足夠 |
-| default | 9B | 一般任務 | 品質與速度平衡 |
-| thinking | 9B | 深度推理 | 需要 thinking mode 的品質 |
-| thinking-code | 9B | 精確 coding | 程式碼需要 9B 的正確性 |
-| creative | 9B | 創意寫作 | 需要格式遵守能力 |
+| Profile | 模型 | 場景 | 參數特點 | 理由 |
+|---------|------|------|---------|------|
+| **fast** | 0.8B | 路由分類、簡單問答 | temp=0.7, pp=1.5 | ~100ms 回應（官方高溫參數不穩定） |
+| **default** | 9B | 一般任務 | temp=0.7, pp=1.5 | 品質與速度平衡 |
+| **reasoning** ⭐ | 9B | 深度推理、數學 | temp=1.0, top_k=40, pp=2.0 | 比 thinking 快 47% 且更穩定 |
+| **thinking** | 9B | 僅在需要時 | temp=1.0, pp=1.5 | ⚠️ `<think>` 不穩定，有 loop 風險 |
+| **thinking-code** | 9B | 精確 coding | temp=0.6, pp=0.0 | 程式碼需要 9B 的正確性 |
+| **creative** | 9B | 創意寫作 | temp=0.7, pp=1.5 | 對齊 non-thinking general |
 
 ### oMLX 配置建議
 

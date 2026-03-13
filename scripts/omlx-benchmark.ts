@@ -1,23 +1,72 @@
 #!/usr/bin/env npx tsx
 /**
- * oMLX Model Benchmark — 測試所有已安裝模型在各種使用場景的表現
+ * oMLX Model Benchmark — 使用 Qwen 官方推薦參數測試
+ *
+ * 參數來源：
+ *   - 0.8B: https://huggingface.co/Qwen/Qwen3.5-0.8B
+ *   - 9B:   https://huggingface.co/Qwen/Qwen3.5-9B
  *
  * Usage: npx tsx tests/omlx-benchmark.ts
  */
 
 const LLM_URL = process.env.LOCAL_LLM_URL ?? 'http://localhost:8000';
-const LLM_KEY = process.env.LOCAL_LLM_KEY ?? 'omlx-local';
 
-// ─── Models ──────────────────────────────────────────────────────────────────
+// ─── Official Recommended Profiles ──────────────────────────────────────────
+// Source: Qwen HuggingFace model cards
 
-interface ModelInfo {
-  id: string;
+interface ProfileConfig {
   label: string;
-  size: string;
+  model: string;
+  temperature: number;
+  top_p: number;
+  top_k: number;
+  presence_penalty: number;
+  enable_thinking: boolean;
+  max_tokens: number;       // 官方建議：standard=32768, complex=81920
 }
 
-// Will be populated from /v1/models
-let MODELS: ModelInfo[] = [];
+const PROFILES: Record<string, ProfileConfig> = {
+  '0.8B': {
+    label: '0.8B (non-thinking text)',
+    model: 'Qwen3.5-0.8B-MLX-4bit',
+    temperature: 1.0,
+    top_p: 1.0,
+    top_k: 20,
+    presence_penalty: 2.0,
+    enable_thinking: false,
+    max_tokens: 32768,
+  },
+  '9B': {
+    label: '9B (non-thinking general)',
+    model: 'Qwen3.5-9B-MLX-4bit',
+    temperature: 0.7,
+    top_p: 0.8,
+    top_k: 20,
+    presence_penalty: 1.5,
+    enable_thinking: false,
+    max_tokens: 32768,
+  },
+  '9B-reasoning': {
+    label: '9B (non-thinking reasoning)',
+    model: 'Qwen3.5-9B-MLX-4bit',
+    temperature: 1.0,
+    top_p: 1.0,
+    top_k: 40,
+    presence_penalty: 2.0,
+    enable_thinking: false,
+    max_tokens: 81920,
+  },
+  '9B-thinking': {
+    label: '9B (thinking general)',
+    model: 'Qwen3.5-9B-MLX-4bit',
+    temperature: 1.0,
+    top_p: 0.95,
+    top_k: 20,
+    presence_penalty: 1.5,
+    enable_thinking: true,
+    max_tokens: 81920,
+  },
+};
 
 // ─── Test Scenarios ──────────────────────────────────────────────────────────
 
@@ -25,120 +74,95 @@ interface Scenario {
   name: string;
   category: string;
   prompt: string;
-  systemPrompt?: string;
-  maxTokens: number;
-  temperature: number;
-  expectedMinLength: number; // minimum chars in response to consider valid
+  /** Which profiles to test this scenario with */
+  profiles: string[];
+  expectedMinLength: number;
   tools?: boolean;
 }
 
 const SCENARIOS: Scenario[] = [
-  // --- 快速回覆 ---
   {
     name: '簡單問答',
     category: '日常',
     prompt: 'What is 2+2? Reply with just the number.',
-    maxTokens: 16,
-    temperature: 0.1,
+    profiles: ['0.8B', '9B'],
     expectedMinLength: 1,
   },
   {
     name: '分類/路由',
     category: '日常',
     prompt: 'Classify this text into one category (coding/chat/reasoning/creative): "Help me write a Python function to sort a list". Reply with one word only.',
-    maxTokens: 8,
-    temperature: 0.1,
+    profiles: ['0.8B', '9B'],
     expectedMinLength: 3,
   },
   {
     name: '翻譯',
     category: '日常',
     prompt: 'Translate to Traditional Chinese: "The quick brown fox jumps over the lazy dog"',
-    maxTokens: 64,
-    temperature: 0.3,
+    profiles: ['0.8B', '9B'],
     expectedMinLength: 5,
   },
-
-  // --- 中等複雜度 ---
   {
     name: '摘要',
     category: '中等',
-    prompt: `Summarize this in 2 sentences: "Artificial intelligence has transformed many industries. In healthcare, AI helps diagnose diseases earlier and more accurately. In finance, it detects fraud patterns that humans might miss. In transportation, self-driving cars use AI to navigate roads safely. However, these advances also raise concerns about job displacement, privacy, and algorithmic bias. Researchers and policymakers are working together to create frameworks that maximize AI's benefits while minimizing its risks."`,
-    maxTokens: 128,
-    temperature: 0.5,
+    prompt: `Summarize this in 2 sentences: "Artificial intelligence has transformed many industries including healthcare, where it helps diagnose diseases earlier, finance, where it detects fraud in real-time, and transportation, where it powers autonomous vehicles. However, experts warn about potential risks including job displacement, privacy concerns, and the need for robust regulatory frameworks to ensure AI development benefits humanity while minimizing harmful impacts. Researchers at leading universities and tech companies are working together to develop ethical guidelines and safety measures that could help navigate these challenges while maximizing the technology benefits."`,
+    profiles: ['0.8B', '9B'],
     expectedMinLength: 30,
   },
   {
     name: '程式碼生成',
     category: '中等',
-    prompt: 'Write a TypeScript function called `fibonacci` that returns the nth fibonacci number using memoization. Include the type signature.',
-    maxTokens: 512,
-    temperature: 0.3,
+    prompt: 'Write a TypeScript function called `fibonacci` that returns the nth fibonacci number using memoization. Include the type signature. Code only, no explanation.',
+    profiles: ['0.8B', '9B'],
     expectedMinLength: 50,
   },
   {
     name: '創意寫作',
     category: '中等',
     prompt: 'Write a haiku about programming in the rain.',
-    maxTokens: 64,
-    temperature: 0.9,
+    profiles: ['0.8B', '9B'],
     expectedMinLength: 10,
   },
-
-  // --- 複雜推理 ---
   {
     name: '邏輯推理',
     category: '推理',
     prompt: 'A farmer has a fox, a chicken, and a bag of grain. He needs to cross a river in a boat that can only carry him and one item. The fox will eat the chicken if left alone, and the chicken will eat the grain if left alone. How does he get everything across? Explain step by step.',
-    maxTokens: 512,
-    temperature: 0.3,
+    profiles: ['0.8B', '9B', '9B-reasoning', '9B-thinking'],
     expectedMinLength: 100,
   },
   {
     name: '數學推理',
     category: '推理',
     prompt: 'If a train travels at 60 km/h for 2.5 hours, then at 80 km/h for 1.5 hours, what is the average speed for the entire journey? Show your work.',
-    maxTokens: 256,
-    temperature: 0.1,
+    profiles: ['0.8B', '9B', '9B-reasoning', '9B-thinking'],
     expectedMinLength: 50,
   },
-
-  // --- 長 context ---
   {
-    name: '長 prompt 理解',
+    name: '閱讀理解',
     category: '長文',
-    prompt: `Read the following conversation and answer the question at the end.
+    prompt: `Read the following conversation and answer the questions.
 
-Alice: I think we should use PostgreSQL for the new project.
-Bob: But we discussed using MongoDB last week because of the flexible schema.
-Alice: True, but our data is mostly relational. We have users, orders, and products with clear relationships.
-Bob: What about the analytics pipeline? MongoDB's aggregation framework is powerful.
-Alice: We could use PostgreSQL with JSONB columns for the semi-structured data. Best of both worlds.
-Bob: Good point. But what about scaling? We expect 10 million users in the first year.
-Alice: PostgreSQL handles that fine with proper indexing and partitioning. Instagram runs on PostgreSQL.
-Bob: OK, but we also need real-time features. WebSocket connections, live updates.
-Alice: That's an application layer concern, not a database concern. We can use Redis for pub/sub.
-Bob: Alright, I'm convinced. Let's go with PostgreSQL + Redis.
-Alice: Great. I'll draft the schema this week.
-Bob: And I'll set up the CI/CD pipeline with the new stack.
+Alice: "I think we should use PostgreSQL for the new project."
+Bob: "But we discussed using MongoDB last week because of the flexible schema."
+Alice: "True, but after researching more, PostgreSQL with JSONB gives us both structured and flexible options. Plus we need ACID compliance for the payment system."
+Bob: "Good point about payments. What about the real-time features?"
+Alice: "We can add Redis for caching and pub/sub. The PostgreSQL + Redis combo is battle-tested."
+Bob: "Alright, I'm convinced. I'll set up the CI/CD pipeline with the new stack."
+Alice: "Great, I'll draft the schema this week."
 
 Questions:
 1. What database did they finally choose?
 2. What was Bob's initial preference?
 3. What will Alice do next?`,
-    maxTokens: 256,
-    temperature: 0.3,
+    profiles: ['0.8B', '9B'],
     expectedMinLength: 50,
   },
-
-  // --- Tool calling ---
   {
     name: 'Tool Calling',
     category: '工具',
     prompt: 'Search memory for "TypeScript configuration"',
-    maxTokens: 256,
-    temperature: 0.1,
-    expectedMinLength: 0, // tool calls may have empty content
+    profiles: ['9B'],
+    expectedMinLength: 0,
     tools: true,
   },
 ];
@@ -146,18 +170,24 @@ Questions:
 // ─── Benchmark Runner ────────────────────────────────────────────────────────
 
 interface BenchmarkResult {
+  profile: string;
   model: string;
   scenario: string;
   category: string;
   success: boolean;
-  prefillMs: number;    // time to first token (approx)
-  totalMs: number;      // total time
+  prefillMs: number;
+  totalMs: number;
   tokensGenerated: number;
   tokensPerSec: number;
   responseLength: number;
   responsePreview: string;
+  hasReasoningContent: boolean;
+  reasoningLength: number;
+  finishReason: string;
   error?: string;
   hasToolCalls?: boolean;
+  // Profile params used
+  params: { temperature: number; top_p: number; top_k: number; presence_penalty: number; max_tokens: number; enable_thinking: boolean };
 }
 
 const TOOLS = [
@@ -175,20 +205,21 @@ const TOOLS = [
   },
 ];
 
-async function runBenchmark(model: string, scenario: Scenario): Promise<BenchmarkResult> {
-  const messages: Array<{ role: string; content: string }> = [];
-  if (scenario.systemPrompt) {
-    messages.push({ role: 'system', content: scenario.systemPrompt });
-  }
-  messages.push({ role: 'user', content: scenario.prompt });
+async function runBenchmark(profileKey: string, profile: ProfileConfig, scenario: Scenario): Promise<BenchmarkResult> {
+  const messages: Array<{ role: string; content: string }> = [
+    { role: 'user', content: scenario.prompt },
+  ];
 
   const body: Record<string, unknown> = {
-    model,
+    model: profile.model,
     messages,
-    max_tokens: scenario.maxTokens,
-    temperature: scenario.temperature,
+    max_tokens: profile.max_tokens,
+    temperature: profile.temperature,
+    top_p: profile.top_p,
+    top_k: profile.top_k,
+    presence_penalty: profile.presence_penalty,
     stream: true,
-    chat_template_kwargs: { enable_thinking: false },
+    chat_template_kwargs: { enable_thinking: profile.enable_thinking },
   };
   if (scenario.tools) {
     body.tools = TOOLS;
@@ -197,27 +228,28 @@ async function runBenchmark(model: string, scenario: Scenario): Promise<Benchmar
   const startTime = performance.now();
   let firstTokenTime = 0;
   let content = '';
+  let reasoningContent = '';
   let tokensGenerated = 0;
   let hasToolCalls = false;
+  let finishReason = '';
 
   try {
     const res = await fetch(`${LLM_URL}/v1/chat/completions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LLM_KEY}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(120_000),
+      signal: AbortSignal.timeout(600_000),
     });
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
       return {
-        model, scenario: scenario.name, category: scenario.category,
+        profile: profileKey, model: profile.model, scenario: scenario.name, category: scenario.category,
         success: false, prefillMs: 0, totalMs: 0, tokensGenerated: 0,
         tokensPerSec: 0, responseLength: 0, responsePreview: '',
+        hasReasoningContent: false, reasoningLength: 0, finishReason: '',
         error: `HTTP ${res.status}: ${errText.slice(0, 100)}`,
+        params: { temperature: profile.temperature, top_p: profile.top_p, top_k: profile.top_k, presence_penalty: profile.presence_penalty, max_tokens: profile.max_tokens, enable_thinking: profile.enable_thinking },
       };
     }
 
@@ -231,23 +263,25 @@ async function runBenchmark(model: string, scenario: Scenario): Promise<Benchmar
       for (const line of text.split('\n')) {
         if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
         try {
-          const chunk = JSON.parse(line.slice(6)) as {
-            choices: Array<{
-              delta: { content?: string; tool_calls?: unknown[] };
-              finish_reason?: string;
-            }>;
-            usage?: { completion_tokens?: number };
-          };
+          const chunk = JSON.parse(line.slice(6));
           const delta = chunk.choices?.[0]?.delta;
           if (delta?.content) {
             if (!firstTokenTime) firstTokenTime = performance.now();
             content += delta.content;
             tokensGenerated++;
           }
+          if (delta?.reasoning_content) {
+            if (!firstTokenTime) firstTokenTime = performance.now();
+            reasoningContent += delta.reasoning_content;
+            tokensGenerated++;
+          }
           if (delta?.tool_calls) {
             if (!firstTokenTime) firstTokenTime = performance.now();
             hasToolCalls = true;
             tokensGenerated++;
+          }
+          if (chunk.choices?.[0]?.finish_reason) {
+            finishReason = chunk.choices[0].finish_reason;
           }
           if (chunk.usage?.completion_tokens) {
             tokensGenerated = chunk.usage.completion_tokens;
@@ -261,7 +295,8 @@ async function runBenchmark(model: string, scenario: Scenario): Promise<Benchmar
     const tokensPerSec = tokensGenerated > 0 ? (tokensGenerated / (totalMs / 1000)) : 0;
 
     return {
-      model,
+      profile: profileKey,
+      model: profile.model,
       scenario: scenario.name,
       category: scenario.category,
       success: content.length >= scenario.expectedMinLength || hasToolCalls,
@@ -270,16 +305,22 @@ async function runBenchmark(model: string, scenario: Scenario): Promise<Benchmar
       tokensGenerated,
       tokensPerSec: Math.round(tokensPerSec * 10) / 10,
       responseLength: content.length,
-      responsePreview: content.replace(/\n/g, ' ').slice(0, 80),
+      responsePreview: content.replace(/\n/g, ' ').slice(0, 100),
+      hasReasoningContent: reasoningContent.length > 0,
+      reasoningLength: reasoningContent.length,
+      finishReason,
       hasToolCalls,
+      params: { temperature: profile.temperature, top_p: profile.top_p, top_k: profile.top_k, presence_penalty: profile.presence_penalty, max_tokens: profile.max_tokens, enable_thinking: profile.enable_thinking },
     };
   } catch (e) {
     const totalMs = performance.now() - startTime;
     return {
-      model, scenario: scenario.name, category: scenario.category,
+      profile: profileKey, model: profile.model, scenario: scenario.name, category: scenario.category,
       success: false, prefillMs: 0, totalMs: Math.round(totalMs),
       tokensGenerated: 0, tokensPerSec: 0, responseLength: 0,
-      responsePreview: '', error: (e as Error).message.slice(0, 80),
+      responsePreview: '', hasReasoningContent: false, reasoningLength: 0,
+      finishReason: '', error: (e as Error).message.slice(0, 80),
+      params: { temperature: profile.temperature, top_p: profile.top_p, top_k: profile.top_k, presence_penalty: profile.presence_penalty, max_tokens: profile.max_tokens, enable_thinking: profile.enable_thinking },
     };
   }
 }
@@ -291,64 +332,92 @@ function formatMs(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-function padRight(s: string, len: number): string {
+function pad(s: string, len: number): string {
   return s.length >= len ? s.slice(0, len) : s + ' '.repeat(len - s.length);
 }
 
 async function main() {
-  // Discover models
-  console.log('🔍 Discovering models on oMLX...\n');
+  // Verify oMLX is running
+  console.log('🔍 檢查 oMLX...\n');
   const modelsRes = await fetch(`${LLM_URL}/v1/models`);
   const modelsData = await modelsRes.json() as { data: Array<{ id: string }> };
+  const availableModels = modelsData.data.map(m => m.id);
+  console.log(`📦 可用模型：${availableModels.join(', ')}\n`);
 
-  // Sort by size (smaller first based on name heuristics)
-  const sizeOrder = (id: string): number => {
-    if (id.includes('0.8B') || id.includes('0.5B') || id.includes('1B')) return 1;
-    if (id.includes('3B') || id.includes('4B')) return 2;
-    if (id.includes('7B') || id.includes('8B') || id.includes('9B')) return 3;
-    if (id.includes('14B') || id.includes('13B')) return 4;
-    if (id.includes('27B') || id.includes('32B') || id.includes('35B')) return 5;
-    if (id.includes('70B') || id.includes('72B')) return 6;
-    return 7;
-  };
-
-  MODELS = modelsData.data
-    .map(m => {
-      const size = m.id.match(/(\d+\.?\d*B)/)?.[1] || '?';
-      return { id: m.id, label: m.id, size };
-    })
-    .sort((a, b) => sizeOrder(a.id) - sizeOrder(b.id));
-
-  console.log(`📦 找到 ${MODELS.length} 個模型：`);
-  MODELS.forEach(m => console.log(`   • ${m.id} (${m.size})`));
+  console.log('📋 測試 Profiles（Qwen 官方推薦參數）：');
+  for (const [key, p] of Object.entries(PROFILES)) {
+    console.log(`   ${pad(key, 16)} temp=${p.temperature} top_p=${p.top_p} top_k=${p.top_k} pp=${p.presence_penalty} think=${p.enable_thinking} max=${p.max_tokens}`);
+  }
   console.log();
 
-  // Run benchmarks
-  const results: BenchmarkResult[] = [];
-  const totalTests = MODELS.length * SCENARIOS.length;
-  let completed = 0;
+  // Warmup: send a trivial request to each model to avoid cold-start bias
+  console.log('🔥 暖機中...');
+  const seenModels = new Set<string>();
+  for (const p of Object.values(PROFILES)) {
+    if (seenModels.has(p.model)) continue;
+    seenModels.add(p.model);
+    process.stdout.write(`   ${p.model} ... `);
+    try {
+      const res = await fetch(`${LLM_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: p.model,
+          messages: [{ role: 'user', content: 'Hi' }],
+          max_tokens: 4,
+          temperature: 0.1,
+          stream: false,
+          chat_template_kwargs: { enable_thinking: false },
+        }),
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (res.ok) console.log('ready');
+      else console.log(`HTTP ${res.status}`);
+    } catch (e) {
+      console.log(`error: ${(e as Error).message.slice(0, 40)}`);
+    }
+    await new Promise(r => setTimeout(r, 300));
+  }
+  console.log();
 
-  for (const model of MODELS) {
+  const results: BenchmarkResult[] = [];
+  let testNum = 0;
+  const totalTests = SCENARIOS.reduce((sum, s) => sum + s.profiles.length, 0);
+
+  for (const scenario of SCENARIOS) {
     console.log(`\n${'═'.repeat(70)}`);
-    console.log(`🤖 測試模型：${model.id} (${model.size})`);
+    console.log(`📝 ${scenario.name}（${scenario.category}）`);
     console.log('═'.repeat(70));
 
-    for (const scenario of SCENARIOS) {
-      completed++;
-      process.stdout.write(`  [${completed}/${totalTests}] ${padRight(scenario.name, 16)} ... `);
+    for (const profileKey of scenario.profiles) {
+      testNum++;
+      const profile = PROFILES[profileKey];
+      if (!profile) {
+        console.log(`  ⚠️  Profile ${profileKey} not found, skipping`);
+        continue;
+      }
+      if (!availableModels.includes(profile.model)) {
+        console.log(`  ⚠️  Model ${profile.model} not available, skipping`);
+        continue;
+      }
 
-      const result = await runBenchmark(model.id, scenario);
+      process.stdout.write(`  [${testNum}/${totalTests}] ${pad(profileKey, 16)} ... `);
+
+      const result = await runBenchmark(profileKey, profile, scenario);
       results.push(result);
 
       const status = result.success ? '✅' : '❌';
-      const speed = result.tokensPerSec > 0 ? `${result.tokensPerSec} tok/s` : 'N/A';
+      const thinkInfo = result.hasReasoningContent ? ` 💭${result.reasoningLength}c` : '';
       console.log(
-        `${status} prefill=${formatMs(result.prefillMs)} total=${formatMs(result.totalMs)} ` +
-        `${speed} len=${result.responseLength}${result.hasToolCalls ? ' 🔧' : ''}` +
-        `${result.error ? ` ERR: ${result.error}` : ''}`
+        `${status} ${formatMs(result.prefillMs)} → ${formatMs(result.totalMs)} | ${result.tokensGenerated} tok | ${result.tokensPerSec} tok/s | ${result.finishReason}${thinkInfo}`
       );
+      if (result.responsePreview) {
+        console.log(`     → ${result.responsePreview}`);
+      }
+      if (result.error) {
+        console.log(`     ❌ ${result.error}`);
+      }
 
-      // Brief cooldown between requests to avoid oMLX queue pressure
       await new Promise(r => setTimeout(r, 500));
     }
   }
@@ -356,74 +425,57 @@ async function main() {
   // ─── Summary Table ───────────────────────────────────────────────────────
 
   console.log(`\n\n${'═'.repeat(90)}`);
-  console.log('📊 綜合比較表');
+  console.log('📊 速度對比表');
   console.log('═'.repeat(90));
+  console.log(`\n${pad('場景', 14)} ${pad('Profile', 16)} ${pad('Prefill', 10)} ${pad('Total', 10)} ${pad('Tokens', 8)} ${pad('tok/s', 8)} ${pad('Finish', 8)} Think?`);
+  console.log('─'.repeat(90));
 
-  // Group by scenario, compare models
-  const categories = [...new Set(SCENARIOS.map(s => s.category))];
-
-  for (const cat of categories) {
-    console.log(`\n── ${cat} ${'─'.repeat(80)}`);
-    const catScenarios = SCENARIOS.filter(s => s.category === cat);
-
-    for (const scenario of catScenarios) {
-      console.log(`\n  📝 ${scenario.name}:`);
-      console.log(`     ${padRight('模型', 30)} ${padRight('Prefill', 10)} ${padRight('Total', 10)} ${padRight('tok/s', 8)} ${padRight('狀態', 4)}`);
-      console.log(`     ${'─'.repeat(66)}`);
-
-      for (const model of MODELS) {
-        const r = results.find(r => r.model === model.id && r.scenario === scenario.name);
-        if (!r) continue;
-        const status = r.success ? '✅' : '❌';
-        console.log(
-          `     ${padRight(model.id, 30)} ${padRight(formatMs(r.prefillMs), 10)} ${padRight(formatMs(r.totalMs), 10)} ${padRight(String(r.tokensPerSec), 8)} ${status}`
-        );
-      }
+  for (const scenario of SCENARIOS) {
+    for (const profileKey of scenario.profiles) {
+      const r = results.find(x => x.scenario === scenario.name && x.profile === profileKey);
+      if (!r) continue;
+      const think = r.hasReasoningContent ? `💭 ${r.reasoningLength}c` : '—';
+      console.log(
+        `${pad(r.scenario, 14)} ${pad(profileKey, 16)} ${pad(formatMs(r.prefillMs), 10)} ${pad(formatMs(r.totalMs), 10)} ${pad(String(r.tokensGenerated), 8)} ${pad(String(r.tokensPerSec), 8)} ${pad(r.finishReason, 8)} ${think}`
+      );
     }
   }
 
-  // ─── Per-model Summary ─────────────────────────────────────────────────
+  // ─── Profile Summary ─────────────────────────────────────────────────
 
   console.log(`\n\n${'═'.repeat(90)}`);
-  console.log('📈 各模型總結');
+  console.log('📈 各 Profile 總結');
   console.log('═'.repeat(90));
 
-  for (const model of MODELS) {
-    const modelResults = results.filter(r => r.model === model.id);
-    const successCount = modelResults.filter(r => r.success).length;
-    const avgTokPerSec = modelResults.filter(r => r.tokensPerSec > 0).reduce((sum, r) => sum + r.tokensPerSec, 0) /
-      (modelResults.filter(r => r.tokensPerSec > 0).length || 1);
-    const avgPrefill = modelResults.filter(r => r.prefillMs > 0).reduce((sum, r) => sum + r.prefillMs, 0) /
-      (modelResults.filter(r => r.prefillMs > 0).length || 1);
+  for (const [key, profile] of Object.entries(PROFILES)) {
+    const profileResults = results.filter(r => r.profile === key);
+    if (profileResults.length === 0) continue;
+    const successCount = profileResults.filter(r => r.success).length;
+    const speedResults = profileResults.filter(r => r.tokensPerSec > 0);
+    const avgTokPerSec = speedResults.length > 0
+      ? speedResults.reduce((sum, r) => sum + r.tokensPerSec, 0) / speedResults.length
+      : 0;
+    const avgPrefill = speedResults.length > 0
+      ? speedResults.reduce((sum, r) => sum + r.prefillMs, 0) / speedResults.length
+      : 0;
 
-    console.log(`\n  🤖 ${model.id} (${model.size})`);
-    console.log(`     成功率：${successCount}/${modelResults.length}`);
+    console.log(`\n  ${key} — ${profile.label}`);
+    console.log(`     成功率：${successCount}/${profileResults.length}`);
     console.log(`     平均速度：${Math.round(avgTokPerSec * 10) / 10} tok/s`);
     console.log(`     平均 Prefill：${formatMs(Math.round(avgPrefill))}`);
+    console.log(`     參數：temp=${profile.temperature} top_p=${profile.top_p} top_k=${profile.top_k} pp=${profile.presence_penalty} think=${profile.enable_thinking} max=${profile.max_tokens}`);
   }
 
-  // ─── Recommendations ───────────────────────────────────────────────────
+  // ─── Save Results ─────────────────────────────────────────────────
 
-  console.log(`\n\n${'═'.repeat(90)}`);
-  console.log('💡 Profile 建議');
-  console.log('═'.repeat(90));
-
-  const fastModels = results
-    .filter(r => r.category === '日常' && r.success)
-    .sort((a, b) => a.totalMs - b.totalMs);
-  const reasoningModels = results
-    .filter(r => r.category === '推理' && r.success)
-    .sort((a, b) => b.responseLength - a.responseLength);
-
-  if (fastModels.length > 0) {
-    console.log(`\n  fast profile 推薦：${fastModels[0].model}`);
-    console.log(`    原因：日常任務最快 (${formatMs(fastModels[0].totalMs)})`);
-  }
-  if (reasoningModels.length > 0) {
-    console.log(`\n  thinking profile 推薦：${reasoningModels[0].model}`);
-    console.log(`    原因：推理任務最完整的回答 (${reasoningModels[0].responseLength} chars)`);
-  }
-
+  const outputPath = `${process.cwd()}/tests/benchmark-results-${new Date().toISOString().slice(0, 10)}.json`;
+  const fs = await import('fs');
+  fs.writeFileSync(outputPath, JSON.stringify({
+    date: new Date().toISOString(),
+    profiles: PROFILES,
+    results,
+  }, null, 2));
+  console.log(`\n\n💾 完整結果已存至：${outputPath}`);
   console.log('\n✅ Benchmark 完成\n');
 }
 

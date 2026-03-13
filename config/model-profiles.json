@@ -1,14 +1,35 @@
 {
   "metadata": {
-    "source": "Unsloth official recommendations (https://unsloth.ai/docs/zh/mo-xing/qwen3.5)",
+    "source": [
+      "Qwen HuggingFace 0.8B: https://huggingface.co/Qwen/Qwen3.5-0.8B",
+      "Qwen HuggingFace 9B: https://huggingface.co/Qwen/Qwen3.5-9B"
+    ],
     "created": "2026-03-13",
-    "notes": "所有參數均符合 Unsloth 官方建議"
+    "updated": "2026-03-13",
+    "notes": "基於 HuggingFace 官方模型卡推薦參數。0.8B 使用保守參數（官方高溫參數導致 thinking loop，見發現 6）。Run 3 驗證後調整。"
   },
   "profiles": {
+    "fast": {
+      "description": "Non-Thinking 快速回覆（路由/分類）",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "max_tokens": 32768,
+      "temperature": 0.7,
+      "top_p": 0.8,
+      "top_k": 20,
+      "presence_penalty": 1.5,
+      "enable_thinking": false,
+      "tools_enabled": false,
+      "timeout_ms": 30000,
+      "extra_body": {
+        "chat_template_kwargs": { "enable_thinking": false }
+      },
+      "official_match": "⚠️ 刻意偏離官方值（官方 temp=1.0/pp=2.0 導致 thinking loop，見發現 6）",
+      "official_params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0 }
+    },
     "default": {
       "description": "Non-Thinking 一般任務",
       "model": "Qwen3.5-9B-MLX-4bit",
-      "max_tokens": 8192,
+      "max_tokens": 32768,
       "temperature": 0.7,
       "top_p": 0.8,
       "top_k": 20,
@@ -21,26 +42,27 @@
       },
       "official_match": "✅ 完全符合 Non-Thinking General Tasks 建議"
     },
-    "fast": {
-      "description": "Non-Thinking 快速回覆（路由/分類）",
-      "model": "Qwen3.5-0.8B-MLX-4bit",
-      "max_tokens": 2048,
-      "temperature": 0.7,
-      "top_p": 0.8,
-      "top_k": 20,
-      "presence_penalty": 1.5,
+    "reasoning": {
+      "description": "Non-Thinking 深度推理（比 thinking mode 更快更穩定）",
+      "model": "Qwen3.5-9B-MLX-4bit",
+      "max_tokens": 81920,
+      "temperature": 1.0,
+      "top_p": 1.0,
+      "top_k": 40,
+      "presence_penalty": 2.0,
       "enable_thinking": false,
-      "tools_enabled": false,
-      "timeout_ms": 30000,
+      "tools_enabled": true,
+      "timeout_ms": 600000,
       "extra_body": {
         "chat_template_kwargs": { "enable_thinking": false }
       },
-      "official_match": "✅ 完全符合（小模型預設 thinking 關閉）"
+      "official_match": "✅ 完全符合 Non-Thinking Hard Reasoning 建議",
+      "benchmark_notes": "邏輯推理比 general 快 47%（19.3s vs 36.5s），答案更簡潔（629 vs 1000 tok）"
     },
     "thinking": {
-      "description": "Thinking 一般推理",
+      "description": "Thinking 一般推理（⚠️ <think> 標籤不穩定，見發現 8）",
       "model": "Qwen3.5-9B-MLX-4bit",
-      "max_tokens": 32768,
+      "max_tokens": 81920,
       "temperature": 1.0,
       "top_p": 0.95,
       "top_k": 20,
@@ -51,12 +73,13 @@
       "extra_body": {
         "chat_template_kwargs": { "enable_thinking": true }
       },
-      "official_match": "✅ 完全符合 Thinking General Tasks 建議"
+      "official_match": "✅ 完全符合 Thinking General Tasks 建議",
+      "reliability_warning": "<think> 標籤生成率 ~50%，失敗時進入 thinking loop"
     },
     "thinking-code": {
       "description": "Thinking 精確 Coding",
       "model": "Qwen3.5-9B-MLX-4bit",
-      "max_tokens": 32768,
+      "max_tokens": 81920,
       "temperature": 0.6,
       "top_p": 0.95,
       "top_k": 20,
@@ -72,10 +95,10 @@
     "creative": {
       "description": "Non-Thinking 創意寫作",
       "model": "Qwen3.5-9B-MLX-4bit",
-      "max_tokens": 8192,
-      "temperature": 0.9,
-      "top_p": 0.9,
-      "top_k": 30,
+      "max_tokens": 32768,
+      "temperature": 0.7,
+      "top_p": 0.8,
+      "top_k": 20,
       "presence_penalty": 1.5,
       "enable_thinking": false,
       "tools_enabled": false,
@@ -83,7 +106,7 @@
       "extra_body": {
         "chat_template_kwargs": { "enable_thinking": false }
       },
-      "official_match": "⚠️ 刻意偏離官方值（temp/top_p/top_k 偏高），增加創意多樣性"
+      "official_match": "✅ 對齊 Non-Thinking General Tasks（Run 3 驗證穩定）"
     }
   }
 }

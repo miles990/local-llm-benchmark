@@ -35,12 +35,12 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 ## 快速結果
 
-### 速度
+### 速度（三次測試平均）
 
-| 模型 | 平均 tok/s | 平均 Prefill |
-|------|-----------|-------------|
-| 0.8B-MLX-4bit | **108.6 tok/s** | 360ms |
-| 9B-MLX-4bit | 18.1 tok/s | 749ms |
+| 模型 | 平均 tok/s | 平均 Prefill | 說明 |
+|------|-----------|-------------|------|
+| 0.8B-MLX-4bit | **~108 tok/s** | ~360ms | 跨測試穩定 |
+| 9B-MLX-4bit | ~18 tok/s | ~750ms | 跨三次測試 ±5% |
 
 0.8B 平均速度是 9B 的 **6 倍**。
 
@@ -58,30 +58,43 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 | 數學推理 | ⚠️ 機械式 | ✅ 有洞察 | 9B |
 | 閱讀理解 | ✅ 有引據 | ✅ 簡潔 | 0.8B |
 
+### 推理 Profile 對比（Run 3 新增）
+
+| Profile | 邏輯推理 | 數學推理 | 推薦 |
+|---------|---------|---------|------|
+| 9B (general) | 36.5s / 1,000 tok | 16.9s / 558 tok | 一般任務 |
+| **9B-reasoning** | **19.3s / 629 tok** | **16.3s / 553 tok** | **推理場景最佳** |
+| 9B-thinking | timeout (600s) | 53s / 1,797 tok | ⚠️ 不穩定 |
+
 ### 結論
 
 - **0.8B 適合**：路由分類、簡單問答、速度優先的場景
 - **9B 適合**：程式碼、推理、翻譯、創意等需要品質的場景
+- **9B-reasoning**：推理場景比 general 快 47%，比 thinking 穩定
 - **最佳策略**：fast profile 用 0.8B 做路由（~100ms），其他 profile 用 9B 拿品質
 
 ## 檔案結構
 
 ```
-├── README.md                    # 本檔案
+├── README.md                              # 本檔案
 ├── reports/
-│   ├── 2026-03-13-benchmark.md  # 完整測試報告
-│   └── findings.md              # 關鍵發現與建議
+│   ├── 2026-03-13-benchmark.md            # Run 1/2 完整測試報告
+│   ├── 2026-03-13-run3-official-params.md # Run 3 官方參數測試報告
+│   └── findings.md                        # 關鍵發現與建議（1-8）
 ├── results/
-│   ├── run-1-speed.json         # 第一次速度測試原始數據
-│   ├── run-2-speed.json         # 第二次速度測試原始數據
-│   └── quality-responses.md     # 完整回答品質對比
+│   ├── run-1-speed.json                   # 第一次速度測試原始數據
+│   ├── run-2-speed.json                   # 第二次速度測試原始數據
+│   ├── run-3-official-params.json         # 第三次官方參數測試原始數據
+│   └── quality-responses.md               # 完整回答品質對比
 ├── config/
-│   ├── test-scenarios.json      # 測試場景定義
-│   └── model-profiles.json      # 模型 profile 參數
+│   ├── test-scenarios.json                # 測試場景定義
+│   └── model-profiles.json                # 模型 profile 參數（含 reasoning）
 ├── scripts/
-│   └── omlx-benchmark.ts        # 測試腳本
+│   └── omlx-benchmark.ts                  # 測試腳本（TypeScript）
+├── models/
+│   └── README.md                          # 模型規格說明
 └── notes/
-    └── model-swap-overhead.md   # 模型切換開銷研究
+    └── model-swap-overhead.md             # 模型切換開銷研究
 ```
 
 ## 執行測試
