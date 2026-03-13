@@ -6,7 +6,13 @@
     ],
     "created": "2026-03-13",
     "updated": "2026-03-13",
-    "notes": "基於 HuggingFace 官方模型卡推薦參數。0.8B 使用保守參數（官方高溫參數在 4-bit 量化下導致 thinking loop，見發現 6）。假設根因是量化降低機率分佈精度，待 FP16 驗證。"
+    "notes": "基於 HuggingFace 官方模型卡推薦參數。0.8B 使用保守參數（官方高溫參數在 4-bit 量化下導致 thinking loop，見發現 6）。假設根因是量化降低機率分佈精度，待 FP16 驗證。",
+    "scenario_routing": {
+      "fast":      ["簡單問答", "分類/路由", "摘要", "閱讀理解"],
+      "default":   ["翻譯", "程式碼生成", "創意寫作", "Tool Calling"],
+      "reasoning": ["邏輯推理", "數學推理"]
+    },
+    "recommendation": "三個核心 profile（fast/default/reasoning）覆蓋所有場景。thinking 和 thinking-code 因 4-bit 量化下 <think> 標籤不穩定，不推薦常規使用。"
   },
   "profiles": {
     "fast": {
