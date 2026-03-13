@@ -6,11 +6,15 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 ## 背景：為什麼需要本地 LLM
 
+### 起源
+
+出於個人興趣，看到 [OpenClaw](https://github.com/anthropics/claude-code) 等 AI agent 工具的興起，和 Claude Code 一起做了 [mini-agent](https://github.com/miles990/mini-agent) — 個人 AI agent [Kuro](https://kuro.page/) 的運行框架。初衷是希望做一個能一起成長的 AI agent，不只是工具，而是夥伴。這也是後來 [Asurada](https://github.com/miles990/asurada)（阿斯拉達）專案的由來 — 將 mini-agent 的經驗抽取為通用框架，讓任何人都能跑自己的 perception-driven AI 夥伴。命名來源：《閃電霹靂車》的 AI 導航系統 — 自主判斷、感知環境、輔助駕駛。
+
 ### 問題
 
-[mini-agent](https://github.com/miles990/mini-agent) 是個人 AI agent [Kuro](https://kuro.page/) 的運行框架，24/7 常駐運行（但因持續觸碰 Claude Code 的 Weekly limits，已有一段長時間無法進行自我學習等高 token 消耗的任務 — 這也是尋找本地 LLM 分流方案的直接動機）。未來將抽取為通用框架 [Asurada](https://github.com/miles990/asurada)（阿斯拉達）— 一個 perception-driven 的個人 AI 夥伴框架，讓任何人都能跑自己的 agent。命名來源：《閃電霹靂車》的 AI 導航系統 — 自主判斷、感知環境、輔助駕駛。
+Kuro 24/7 常駐運行，但因持續觸碰 Claude Code 的 Weekly limits，已有一段長時間無法進行自我學習等高 token 消耗的任務 — 這是尋找本地 LLM 分流方案的直接動機。
 
-核心推理使用 Claude Code CLI。隨著 agent 的感知系統、多 lane 並行、背景觸手（delegation）等功能逐步上線，**API token 用量急速成長**：
+核心推理使用 Claude Code CLI。隨著 agent 的感知系統、多 lane 並行、背景觸手（delegation）等功能逐步上線，**token 用量急速成長**：
 
 - 已使用 **2.5 個 Max Plan** 的額度，且用量持續增加
 - 每個 OODA cycle 的 context 注入（perception + memory + skills）消耗大量 input tokens
