@@ -8,7 +8,7 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 ### 問題
 
-[mini-agent](https://github.com/miles990/mini-agent) 是一個 24/7 常駐的個人 AI agent，未來將抽取為通用框架 [Asurada](https://github.com/miles990/mini-agent/blob/main/memory/proposals/2026-03-11-asurada-framework.md)（阿斯拉達）— 一個 perception-driven 的個人 AI 夥伴框架，讓任何人都能跑自己的 agent。
+[mini-agent](https://github.com/miles990/mini-agent) 是一個 24/7 常駐的個人 AI agent，未來將抽取為通用框架 **Asurada**（阿斯拉達）— 一個 perception-driven 的個人 AI 夥伴框架，讓任何人都能跑自己的 agent。命名來源：《閃電霹靂車》的 AI 導航系統 — 自主判斷、感知環境、輔助駕駛。
 
 核心推理使用 Claude Code（Anthropic API）。隨著 agent 的感知系統、多 lane 並行、背景觸手（delegation）等功能逐步上線，**API token 用量急速成長**：
 
