@@ -4,51 +4,7 @@ Apple Silicon 上本地 LLM 推理效能與品質的系統化基準測試。
 
 使用 [oMLX](https://github.com/jundot/omlx) 推理伺服器，透過 OpenAI-compatible API 測試不同大小的量化模型在各種使用場景下的表現。
 
-## 背景：為什麼需要本地 LLM
-
-### 起源
-
-出於個人興趣，看到 [OpenClaw](https://github.com/anthropics/claude-code) 等 AI agent 工具的興起，和 Claude Code 一起做了 [mini-agent](https://github.com/miles990/mini-agent) — 個人 AI agent [Kuro](https://kuro.page/) 的運行框架。初衷是希望做一個能一起成長的 AI agent，不只是工具，而是夥伴。這也是後來 [Asurada](https://github.com/miles990/asurada)（阿斯拉達）專案的由來 — 將 mini-agent 的經驗抽取為通用框架，讓任何人都能跑自己的 perception-driven AI 夥伴。命名來源：《閃電霹靂車》的 AI 導航系統 — 自主判斷、感知環境、輔助駕駛。
-
-### 問題
-
-Kuro 24/7 常駐運行，但因持續觸碰 Claude Code 的 Weekly limits，已有一段長時間無法進行自我學習等高 token 消耗的任務 — 這是尋找本地 LLM 分流方案的直接動機。
-
-核心推理使用 Claude Code CLI。隨著 agent 的感知系統、多 lane 並行、背景觸手（delegation）等功能逐步上線，**token 用量急速成長**：
-
-- 已使用 **2.5 個 Max Plan** 的額度，且用量持續增加
-- 每個 OODA cycle 的 context 注入（perception + memory + skills）消耗大量 input tokens
-- 6 條並行背景觸手 + foreground lane + main loop = 最多 9 條同時推理
-- 不是所有任務都需要 Claude 等級的智力 — 路由分類、簡單問答用 Claude 是浪費
-
-### 契機
-
-兩個先前的實驗證明了「分層推理」的可行性：
-
-1. **[mushi](https://github.com/kuro-agent/mushi) — System 1 直覺層**：用輕量模型（Taalas HC1，~800ms）做快速 triage（wake/skip 判斷），讓不必要的 cycle 不發生。上線後**每天省 ~1M tokens**，980+ 次 triage 零 false negative 後畢業。證明「不是所有判斷都需要大模型」
-2. **autoRouteProfile 架構**：已在 mini-agent 中實作兩階段路由 — 先用小模型分類，再路由到對應 profile。架構就緒，缺的是本地推理能力
-
-然後看到了 [oMLX](https://github.com/jundot/omlx) — Apple Silicon 原生的 MLX 推理伺服器，支援 OpenAI-compatible API、多模型 pinning、streaming。剛好補上最後一塊拼圖。
-
-### 目標
-
-用本地 LLM 承擔不需要 Claude 智力的任務，**降低 API 成本的同時增加並發能力**。這也是 Asurada 通用架構的核心設計 — agent 不應該綁死在單一 LLM provider 上：
-
-```
-Asurada 兩層推理架構（mushi 已內化為系統 triage 機制，不再作為獨立層）：
-
-  快思考（本地 LLM） → triage + 路由 0.8B（免費、無限、~100ms）+ 執行 9B（~18 tok/s）
-  慢思考（Claude）   → 只用在真正需要高智力的地方
-
-之前：所有任務 → Claude Code（貴、有 Weekly limits、單點依賴）
-之後：路由分類、簡單判斷 → 本地 0.8B（免費、無限、~100ms）
-      一般任務          → 本地 9B（免費、無限、~18 tok/s）
-      需要高智力的任務   → Claude Code（只用在真正需要的地方）
-```
-
-mushi 的經驗證明了分層推理有效，其 triage 機制已內化到 Asurada 的本地 LLM 層中 — 0.8B 同時承擔 triage 和路由的角色。
-
-本 benchmark 就是為了驗證本地 LLM 層的可行性 — 速度和品質是否足以承擔分流任務。
+## 本 benchmark 就是為了驗證本地 LLM 層的可行性 — 速度和品質是否足以承擔任務。
 
 ## 測試環境
 
@@ -64,7 +20,7 @@ mushi 的經驗證明了分層推理有效，其 triage 機制已內化到 Asura
 
 ## 使用場景
 
-本 benchmark 服務於 [mini-agent](https://github.com/anthropics/mini-agent) — 一個跑在本機的個人 AI agent 框架。Agent 需要 **24/7 常駐運行**，核心需求：
+核心需求：
 
 | 需求 | 說明 |
 |------|------|
@@ -73,11 +29,6 @@ mushi 的經驗證明了分層推理有效，其 triage 機制已內化到 Asura
 | **零雲端依賴** | 本機推理，不依賴外部 API。離線可用、無 token 費用、無隱私疑慮 |
 | **並行常駐** | 多個模型同時 pin 在記憶體，切換零延遲。Agent daemon 不能因模型載入而卡住 |
 
-**架構設想**：兩階段路由（autoRouteProfile）
-
-```
-用戶請求 → 0.8B 快速分類（~100ms）→ 路由到對應 profile → 9B 執行實際任務
-```
 
 ## 測試模型
 
