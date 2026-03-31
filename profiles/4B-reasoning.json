@@ -1,0 +1,17 @@
+{
+  "model": "Qwen3.5-4B-MLX-4bit",
+  "max_tokens": 81920,
+  "temperature": 1.0,
+  "top_p": 1.0,
+  "top_k": 40,
+  "presence_penalty": 2.0,
+  "enable_thinking": false,
+  "tools_enabled": true,
+  "timeout_ms": 600000,
+  "extra_body": {
+    "chat_template_kwargs": { "enable_thinking": false }
+  },
+  "official_match": "⚠️ 符合官方 Non-Thinking Hard Reasoning 建議，但 4-bit 4B 下不穩定",
+  "benchmark_notes": "邏輯推理 600s timeout（thinking loop），跟 0.8B 同問題。不推薦使用 — 改用 4B conservative profile。",
+  "reliability_warning": "高溫參數（temp=1.0, pp=2.0）在 4-bit 量化的 4B 模型下導致 thinking loop，與 0.8B 的行為一致。"
+}

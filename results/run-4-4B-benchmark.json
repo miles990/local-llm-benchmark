@@ -1,0 +1,275 @@
+{
+  "date": "2026-03-31T05:20:00.000Z",
+  "description": "4B (Qwen3.5-4B-MLX-4bit) benchmark — 0.8B vs 4B 對比",
+  "profiles": {
+    "0.8B": {
+      "label": "0.8B (non-thinking text)",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "temperature": 1.0,
+      "top_p": 1.0,
+      "top_k": 20,
+      "presence_penalty": 2.0,
+      "enable_thinking": false,
+      "max_tokens": 32768
+    },
+    "4B": {
+      "label": "4B (non-thinking general)",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "temperature": 0.7,
+      "top_p": 0.8,
+      "top_k": 20,
+      "presence_penalty": 1.5,
+      "enable_thinking": false,
+      "max_tokens": 32768
+    },
+    "4B-reasoning": {
+      "label": "4B (non-thinking reasoning)",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "temperature": 1.0,
+      "top_p": 1.0,
+      "top_k": 40,
+      "presence_penalty": 2.0,
+      "enable_thinking": false,
+      "max_tokens": 81920
+    }
+  },
+  "results": [
+    {
+      "profile": "0.8B",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "scenario": "簡單問答",
+      "category": "日常",
+      "success": true,
+      "totalMs": 112,
+      "tokensPerSec": 8.9,
+      "params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "簡單問答",
+      "category": "日常",
+      "success": true,
+      "totalMs": 248,
+      "tokensPerSec": 4.0,
+      "params": { "temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "0.8B",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "scenario": "分類/路由",
+      "category": "日常",
+      "success": true,
+      "totalMs": 151,
+      "tokensPerSec": 13.3,
+      "responsePreview": "reasoning (incorrect — should be coding)",
+      "params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "分類/路由",
+      "category": "日常",
+      "success": true,
+      "totalMs": 352,
+      "tokensPerSec": 2.8,
+      "responsePreview": "coding (correct)",
+      "params": { "temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "0.8B",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "scenario": "翻譯",
+      "category": "日常",
+      "success": true,
+      "totalMs": 448,
+      "tokensPerSec": 153.9,
+      "responsePreview": "verbose/inaccurate translation",
+      "params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "翻譯",
+      "category": "日常",
+      "success": true,
+      "totalMs": 421,
+      "tokensPerSec": 23.7,
+      "responsePreview": "precise translation",
+      "params": { "temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "0.8B",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "scenario": "摘要",
+      "category": "中等",
+      "success": true,
+      "totalMs": 496,
+      "tokensPerSec": 127.0,
+      "params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "摘要",
+      "category": "中等",
+      "success": true,
+      "totalMs": 1800,
+      "tokensPerSec": 38.3,
+      "params": { "temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "0.8B",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "scenario": "程式碼生成",
+      "category": "中等",
+      "success": true,
+      "totalMs": 215,
+      "tokensPerSec": 102.1,
+      "responsePreview": "stub only, hallucinated import",
+      "params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "程式碼生成",
+      "category": "中等",
+      "success": true,
+      "totalMs": 2500,
+      "tokensPerSec": 49.8,
+      "responsePreview": "complete fibonacci with memoization",
+      "params": { "temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "0.8B",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "scenario": "創意寫作",
+      "category": "中等",
+      "success": true,
+      "totalMs": 250,
+      "tokensPerSec": 131.9,
+      "responsePreview": "wrong format (not proper haiku)",
+      "params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "創意寫作",
+      "category": "中等",
+      "success": true,
+      "totalMs": 586,
+      "tokensPerSec": 37.5,
+      "responsePreview": "correct haiku format",
+      "params": { "temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "0.8B",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "scenario": "邏輯推理",
+      "category": "推理",
+      "success": false,
+      "totalMs": 237000,
+      "tokensGenerated": 32767,
+      "tokensPerSec": 138.0,
+      "finishReason": "length",
+      "responsePreview": "thinking loop — hit max_tokens (32768) in 237s",
+      "params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "邏輯推理",
+      "category": "推理",
+      "success": true,
+      "totalMs": 12500,
+      "tokensGenerated": 626,
+      "tokensPerSec": 49.9,
+      "finishReason": "stop",
+      "responsePreview": "correct step-by-step solution",
+      "params": { "temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B-reasoning",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "邏輯推理",
+      "category": "推理",
+      "success": false,
+      "totalMs": 600000,
+      "tokensGenerated": 0,
+      "tokensPerSec": 0,
+      "finishReason": "",
+      "error": "timeout — thinking loop with reasoning params (temp=1.0, pp=2.0)",
+      "params": { "temperature": 1.0, "top_p": 1.0, "top_k": 40, "presence_penalty": 2.0, "max_tokens": 81920, "enable_thinking": false }
+    },
+    {
+      "profile": "0.8B",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "scenario": "數學推理",
+      "category": "推理",
+      "success": true,
+      "totalMs": 9300,
+      "tokensPerSec": 47.2,
+      "responsePreview": "correct answer",
+      "params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "數學推理",
+      "category": "推理",
+      "success": true,
+      "totalMs": 9500,
+      "tokensPerSec": 51.0,
+      "responsePreview": "correct answer",
+      "params": { "temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "0.8B",
+      "model": "Qwen3.5-0.8B-MLX-4bit",
+      "scenario": "閱讀理解",
+      "category": "長文",
+      "success": true,
+      "totalMs": 1200,
+      "tokensPerSec": 159.1,
+      "responsePreview": "correct answers",
+      "params": { "temperature": 1.0, "top_p": 1.0, "top_k": 20, "presence_penalty": 2.0, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "閱讀理解",
+      "category": "長文",
+      "success": true,
+      "totalMs": 3400,
+      "tokensPerSec": 41.9,
+      "responsePreview": "correct answers",
+      "params": { "temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5, "max_tokens": 32768, "enable_thinking": false }
+    },
+    {
+      "profile": "4B",
+      "model": "Qwen3.5-4B-MLX-4bit",
+      "scenario": "Tool Calling",
+      "category": "工具",
+      "success": true,
+      "totalMs": 1400,
+      "tokensPerSec": 0.7,
+      "tokensGenerated": 1,
+      "finishReason": "tool_calls",
+      "hasToolCalls": true,
+      "params": { "temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5, "max_tokens": 32768, "enable_thinking": false }
+    }
+  ],
+  "summary": {
+    "4B_conservative": {
+      "success_rate": "10/10",
+      "avg_speed": "~30 tok/s",
+      "reliability": "零 thinking loop，所有場景正常完成",
+      "quality_vs_0.8B": "分類答對(0.8B答錯)、code完整(0.8B只有stub)、haiku格式正確(0.8B格式錯)、推理不loop(0.8B loop 237s)"
+    },
+    "4B_reasoning": {
+      "success_rate": "0/1 (timeout)",
+      "note": "高溫參數在 4-bit 4B 下跟 0.8B 一樣會 thinking loop，不推薦使用"
+    },
+    "recommendation": "全 4B conservative（temp=0.7, pp=1.5）。不做 0.8B/4B 分流 — 0.8B 快但不穩定，省的幾百毫秒對 Akari 60s tick 沒意義。"
+  }
+}
