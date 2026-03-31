@@ -8,11 +8,25 @@
     "updated": "2026-03-13",
     "notes": "基於 HuggingFace 官方模型卡推薦參數。0.8B 使用保守參數（官方高溫參數在 4-bit 量化下導致 thinking loop，見發現 6）。假設根因是量化降低機率分佈精度，待 FP16 驗證。",
     "scenario_routing": {
-      "fast":      ["簡單問答", "分類/路由", "摘要", "閱讀理解"],
-      "default":   ["翻譯", "程式碼生成", "創意寫作", "Tool Calling"],
+      "fast":      ["簡單問答", "摘要"],
+      "default":   ["分類/路由", "翻譯", "程式碼生成", "創意寫作", "Tool Calling", "閱讀理解"],
       "reasoning": ["邏輯推理", "數學推理"]
     },
-    "recommendation": "三個核心 profile（fast/default/reasoning）覆蓋所有場景。thinking 和 thinking-code 因 4-bit 量化下 <think> 標籤不穩定，不推薦常規使用。"
+    "recommendation": "三個核心 profile（fast/default/reasoning）覆蓋所有場景。thinking 和 thinking-code 因 4-bit 量化下 <think> 標籤不穩定，不推薦常規使用。",
+    "4B_benchmark_2026-03-31": {
+      "routing": {
+        "FAST (0.8B)": "簡單問答、摘要（3-5x 快，品質 OK）",
+        "STANDARD (4B conservative)": "分類、翻譯、code、推理、creative、tool calling（10/10 成功率）"
+      },
+      "key_findings": [
+        "4B conservative (temp=0.7, pp=1.5) = 10/10 成功率，零 loop",
+        "4B reasoning (temp=1.0, pp=2.0) = thinking loop timeout，跟 0.8B 同問題",
+        "4B 品質明顯優於 0.8B（分類答對、code 完整、haiku 正確、推理不 loop）",
+        "0.8B 邏輯推理會 thinking loop 到 max_tokens（237s）",
+        "4B 速度約 0.8B 的 1/3，但可靠度更高"
+      ],
+      "akari_config": "cognitiveMode.modelMap: conversational→0.8B, contemplative/collaborative→4B"
+    }
   },
   "profiles": {
     "fast": {
