@@ -1,0 +1,99 @@
+{
+  "date": "2026-03-31T05:36:51.263Z",
+  "model": "Qwen3.5-4B-MLX-4bit",
+  "profile": {
+    "model": "Qwen3.5-4B-MLX-4bit",
+    "temperature": 0.7,
+    "top_p": 0.8,
+    "top_k": 20,
+    "presence_penalty": 1.5,
+    "enable_thinking": false,
+    "max_tokens": 512
+  },
+  "results": [
+    {
+      "scenario": "色彩辨識",
+      "category": "基礎",
+      "success": true,
+      "keywordHit": true,
+      "matchedKeyword": "red",
+      "prefillMs": 643,
+      "totalMs": 667,
+      "tokensGenerated": 1,
+      "tokensPerSec": 1.5,
+      "responsePreview": " Red"
+    },
+    {
+      "scenario": "形狀辨識",
+      "category": "基礎",
+      "success": true,
+      "keywordHit": true,
+      "matchedKeyword": "circle",
+      "prefillMs": 479,
+      "totalMs": 644,
+      "tokensGenerated": 8,
+      "tokensPerSec": 12.4,
+      "responsePreview": " A blue circle on a white background."
+    },
+    {
+      "scenario": "圖案描述",
+      "category": "基礎",
+      "success": false,
+      "keywordHit": false,
+      "matchedKeyword": "",
+      "prefillMs": 416,
+      "totalMs": 470,
+      "tokensGenerated": 2,
+      "tokensPerSec": 4.3,
+      "responsePreview": "B)"
+    },
+    {
+      "scenario": "物件計數",
+      "category": "理解",
+      "success": true,
+      "keywordHit": true,
+      "matchedKeyword": "3",
+      "prefillMs": 442,
+      "totalMs": 469,
+      "tokensGenerated": 1,
+      "tokensPerSec": 2.1,
+      "responsePreview": "3"
+    },
+    {
+      "scenario": "漸層分析",
+      "category": "理解",
+      "success": true,
+      "keywordHit": true,
+      "matchedKeyword": "gradient",
+      "prefillMs": 428,
+      "totalMs": 4996,
+      "tokensGenerated": 248,
+      "tokensPerSec": 49.6,
+      "responsePreview": "This image displays a **smooth linear gradient** transitioning from pure black on the left to pure white on the right. T"
+    },
+    {
+      "scenario": "空間推理",
+      "category": "推理",
+      "success": true,
+      "keywordHit": true,
+      "matchedKeyword": "center",
+      "prefillMs": 559,
+      "totalMs": 794,
+      "tokensGenerated": 12,
+      "tokensPerSec": 15.1,
+      "responsePreview": "The main object is located at the center of the image."
+    },
+    {
+      "scenario": "比較分析",
+      "category": "推理",
+      "success": true,
+      "keywordHit": true,
+      "matchedKeyword": "equal",
+      "prefillMs": 457,
+      "totalMs": 997,
+      "tokensGenerated": 29,
+      "tokensPerSec": 29.1,
+      "responsePreview": "Yes, all the stripes in the flag of Mauritania are equal in width. There are three colors present: green, yellow, and bl"
+    }
+  ]
+}

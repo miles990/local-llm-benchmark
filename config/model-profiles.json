@@ -26,6 +26,30 @@
         "4B 速度約 0.8B 的 1/3，但可靠度更高"
       ],
       "akari_config": "cognitiveMode.modelMap: conversational→0.8B, contemplative/collaborative→4B"
+    },
+    "4B_vision_benchmark_2026-03-31": {
+      "model": "Qwen3.5-4B-MLX-4bit（原生 VLM，297 vision tensors，ViT 24-layer）",
+      "key_finding": "不需額外下載 vision model — Qwen3.5-4B 本身就是 VLM",
+      "results": {
+        "success_rate": "6/7 (86%)",
+        "avg_prefill": "489ms",
+        "avg_tok_per_sec": 16.3
+      },
+      "scenarios": {
+        "色彩辨識": "✅ 正確辨識紅色（1 tok, 643ms prefill）",
+        "形狀辨識": "✅ 'A blue circle on a white background'（8 tok, 479ms）",
+        "圖案描述": "❌ 64x64 條紋圖太小，模型只回 'B)'",
+        "物件計數": "✅ 正確計數 3 個點（1 tok, 442ms）",
+        "漸層分析": "✅ 詳細描述 linear gradient（248 tok, 428ms）",
+        "空間推理": "✅ 正確判斷物件在中心（12 tok, 559ms）",
+        "比較分析": "✅ 正確辨識條紋等寬+2色（29 tok, 457ms，但幻覺為茅利塔尼亞國旗）"
+      },
+      "notes": [
+        "Vision prefill 比純文字慢約 2-3x（~500ms vs ~200ms），但仍在可用範圍",
+        "小圖辨識較弱（64x64 stripes 失敗），較大/清晰的圖表現好",
+        "有輕微幻覺傾向（把條紋辨識為國旗），但核心特徵描述正確",
+        "推薦使用 conservative params（temp=0.7, pp=1.5），跟文字任務相同"
+      ]
     }
   },
   "profiles": {

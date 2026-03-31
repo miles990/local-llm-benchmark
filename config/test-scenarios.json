@@ -122,5 +122,6 @@
       ],
       "purpose": "OpenAI function calling 相容性"
     }
-  ]
+  ],
+  "vision_scenarios_note": "Vision 測試獨立於 scripts/omlx-vision-benchmark.ts，使用程式生成的測試圖片。詳見 model-profiles.json 的 4B_vision_benchmark_2026-03-31"
 }
